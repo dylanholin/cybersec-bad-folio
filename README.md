@@ -20,14 +20,14 @@ cp .env.example .env
 docker-compose up --build
 ```
 
-- Frontend : http://localhost:80
+- Frontend : https://localhost (HTTPS avec certificat auto-signé en dev)
 - Backend API : http://localhost:8080/api
 
 ## Comptes de test
 
 | Email | Mot de passe | Rôle |
 |-------|-------------|------|
-| admin@devfolio.com | admin123 | ADMIN |
+| admin@devfolio.com | DevfolioAdmin2024! | ADMIN |
 | lilo@student.com | liloPass2024! | USER |
 | dylan@student.com | dylanPass2024! | USER |
 

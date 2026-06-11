@@ -85,7 +85,7 @@ JWT_SECRET=<générer avec : openssl rand -base64 48>
 JWT_EXPIRATION=3600000
 
 ADMIN_EMAIL=admin@devfolio.com
-ADMIN_PASSWORD=admin123
+ADMIN_PASSWORD=DevfolioAdmin2024!
 ```
 
 Charger les variables dans le shell (obligatoire avant chaque lancement du backend) :
@@ -103,7 +103,7 @@ export DB_HOST=localhost DB_PORT=3306 DB_NAME=devfolio
 export DB_USER=devfolio_app DB_PASSWORD='DevfolioApp2024!'
 export JWT_SECRET='votre-secret-généré-avec-openssl'
 export JWT_EXPIRATION=3600000
-export ADMIN_EMAIL=admin@devfolio.com ADMIN_PASSWORD=admin123
+export ADMIN_EMAIL=admin@devfolio.com ADMIN_PASSWORD='DevfolioAdmin2024!'
 ```
 
 > **Important** : les variables d'environnement ne persistent pas entre les sessions. Il faut les recharger à chaque ouverture de terminal.
@@ -145,7 +145,9 @@ Ouvrir le navigateur sur : **http://localhost:5173**
 | Test | Commande / URL | Résultat attendu |
 |------|---------------|-------------------|
 | Backend actif | `curl http://localhost:8080/api/projects` | Liste JSON des projets publics |
-| Login | `curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d '{"email":"admin@devfolio.com","password":"admin123"}'` | Token JWT dans la réponse |
+| Login | `curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d '{"email":"admin@devfolio.com","password":"DevfolioAdmin2024!"}'` | Token JWT dans la réponse |
+| Rate limiting | Envoyer 6+ requêtes de login en moins d'une minute | 429 Too Many Requests |
+| Logout | `curl -X POST http://localhost:8080/api/auth/logout -H "Authorization: Bearer <token>"` | `{"message":"Déconnexion réussie"}` — token blacklisté |
 | Route protégée | `curl http://localhost:8080/api/admin/users` | 401 Unauthorized |
 | Route admin | `curl -H "Authorization: Bearer <token>" http://localhost:8080/api/admin/users` | Liste des utilisateurs (rôle ADMIN) |
 | Frontend | http://localhost:5173 | Page d'accueil DevFolio |
@@ -197,7 +199,7 @@ export DB_HOST=localhost DB_PORT=3306 DB_NAME=devfolio
 export DB_USER=devfolio_app DB_PASSWORD='DevfolioApp2024!'
 export JWT_SECRET='votre-secret-généré'
 export JWT_EXPIRATION=3600000
-export ADMIN_EMAIL=admin@devfolio.com ADMIN_PASSWORD=admin123
+export ADMIN_EMAIL=admin@devfolio.com ADMIN_PASSWORD='DevfolioAdmin2024!'
 ```
 
 ### 403 sur POST `/api/auth/login`
@@ -231,3 +233,16 @@ Si trop ancien :
 ```bash
 sudo dnf install -y nodejs npm
 ```
+
+### 429 Too Many Requests sur le login
+
+Le rate limiting bloque après 5 tentatives échouées par minute et par IP. Attendre 60 secondes ou :
+
+```bash
+# Vérifier le compteur dans les logs backend
+# Le compteur se réinitialise aussi après un login réussi
+```
+
+### Token toujours valide après logout
+
+Le logout côté serveur blacklist le token. Vérifier que le frontend appelle bien `POST /api/auth/logout` (le store Pinia le fait automatiquement). Si le token est toujours accepté après logout, vérifier que `TokenBlacklistService` est bien injecté dans `JwtAuthenticationFilter`.
