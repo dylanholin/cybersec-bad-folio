@@ -25,9 +25,10 @@ CREATE TABLE IF NOT EXISTS projects (
 );
 
 -- Comptes avec hashes BCrypt (cost factor 12)
--- admin123
+-- Les mots de passe en clair ne sont PAS documentés ici (A02-06)
+-- Voir .env.example pour les identifiants de démonstration
 INSERT INTO users (email, password, role, bio) VALUES
-    ('admin@devfolio.com', '$2a$12$80ekbUlL4gAAHdSfRpurLutjGNmPot.2EgSgmJUJ0FJsX1W95XiqO', 'ADMIN',
+    ('admin@devfolio.com', '$2y$12$5EjE6xZfeTVFlZYOvXFVpuAmw7NfrqjMzBWC8fNNP8El8TqS95Q1a', 'ADMIN',
      'Administrateur DevFolio'),
     ('lilo@student.com', '$2a$12$LpVOy7RNc5Tj76lygYnHYOWYyq2qyOtgkVNxXL7kuquWWgmuQ/PnG', 'USER',
      'Développeuse passionnée'),
