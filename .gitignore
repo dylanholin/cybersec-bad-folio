@@ -1,0 +1,13 @@
+# Compiled output
+target/
+dist/
+node_modules/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# MANQUANT : .env n'est PAS dans ce fichier
+# MANQUANT : *.pem, *.key, secrets/
