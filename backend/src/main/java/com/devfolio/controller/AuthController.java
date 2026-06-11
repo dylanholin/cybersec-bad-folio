@@ -4,10 +4,16 @@ import com.devfolio.model.User;
 import com.devfolio.repository.UserRepository;
 import com.devfolio.service.AuthService;
 import com.devfolio.service.JwtService;
+import com.devfolio.service.RateLimitService;
+import com.devfolio.service.TokenBlacklistService;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,8 +39,21 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private RateLimitService rateLimitService;
+
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
+
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
+        String clientIp = httpRequest.getRemoteAddr();
+
+        // A04-01 : rate limiting (5 tentatives/minute par IP)
+        if (rateLimitService.isRateLimited(clientIp)) {
+            return ResponseEntity.status(429).body(Map.of("error", "Trop de tentatives, réessayez dans une minute"));
+        }
+
         String username = request.get("email");
         String password = request.get("password");
 
@@ -46,6 +65,9 @@ public class AuthController {
             log.warn("Failed login attempt for: {}", username);
             return ResponseEntity.status(401).body(Map.of("error", "Identifiants incorrects"));
         }
+
+        // Login réussi : réinitialiser le compteur de rate limit pour cette IP
+        rateLimitService.reset(clientIp);
 
         User user = userOpt.get();
         String token = jwtService.generateToken(user);
@@ -71,5 +93,26 @@ public class AuthController {
         // Le token doit être envoyé par email, pas retourné dans la réponse
         log.info("Password reset requested for: {}", email);
         return ResponseEntity.ok(Map.of("message", "Si le compte existe, un email de réinitialisation a été envoyé"));
+    }
+
+    /**
+     * A07-05 : Logout côté serveur — invalide le token JWT en l'ajoutant à la blacklist.
+     * Le token reste blacklisté jusqu'à son expiration naturelle.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
+            try {
+                Claims claims = jwtService.validateToken(token);
+                tokenBlacklistService.blacklist(token, claims);
+                log.info("Logout réussi pour {}", claims.getSubject());
+            } catch (Exception e) {
+                // Token déjà invalide ou expiré — rien à blacklister
+                log.debug("Logout avec token invalide : {}", e.getMessage());
+            }
+        }
+        return ResponseEntity.ok(Map.of("message", "Déconnexion réussie"));
     }
 }
