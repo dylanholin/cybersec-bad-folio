@@ -262,21 +262,22 @@ Idéalement, remplacer `@RequestBody User` par un DTO `UpdateUserRequest(email, 
 
 Les vulnérabilités suivantes sont **connues mais acceptées** pour la démo, à corriger ensuite :
 
-| # | Vulnérabilité | Justification |
-|---|---------------|---------------|
-| VULN-21 | Pas de validation de complexité des mots de passe | Pas de vrais utilisateurs en prod |
-| VULN-23 | Token de reset dans l'URL | Fonctionnalité non critique pour la démo |
-| VULN-25 | Pas d'invalidation serveur des tokens | JWT avec expiration courte suffit pour la démo |
-| VULN-28 | Protection admin côté client | Sera couvert par VULN-06 (protection serveur) |
-| VULN-29 | Hashes MD5 affichés dans l'UI admin | L'UI admin sera protégée par auth serveur + @JsonIgnore |
-| VULN-32 | Image Docker complète | Pas bloquant pour la démo |
-| VULN-38 | Pas de rotation des logs | Volume de logs limité sur la durée de la démo |
-| VULN-39 | Échecs de connexion non loggés | Pas de monitoring en place |
-| VULN-40 | Pas de rate limiting | Pas de vrais utilisateurs en prod |
-| VULN-41 | Fallback mot de passe en clair | BCrypt levéra une exception |
-| VULN-42 | Tous les comptes même mot de passe | Données de test uniquement |
-| VULN-43 | Données NDA dans les projets de test | Données fictives |
-| VULN-45 | Pas de healthcheck Docker | Non bloquant pour la démo |
+| # | Vulnérabilité | Justification | Correction prévue |
+|---|---------------|---------------|-------------------|
+| VULN-37 | Pas de HTTPS (HTTP uniquement) | Certificat auto-signé peu utile pour une démo locale | Let's Encrypt en prod + redirection HTTP→HTTPS dans Nginx |
+| VULN-40 | Pas de rate limiting sur le login | Pas de vrais utilisateurs en prod | Bucket4j ou Nginx `limit_req` |
+| VULN-25 | Pas d'invalidation serveur des tokens JWT | JWT avec expiration courte (1h) suffit pour la démo | Blacklist en BDD ou refresh tokens |
+| VULN-21 | Validation complexité des mots de passe | Partiellement corrigé (12c + majuscule + chiffre + spécial) | Renforcer avec un validateur complet |
+| VULN-23 | Token de reset dans l'URL | Fonctionnalité non critique pour la démo | Envoyer par email, pas dans l'URL |
+| VULN-28 | Protection admin côté client | Sera couvert par VULN-06 (protection serveur) | Déjà corrigé côté serveur |
+| VULN-29 | Hashes affichés dans l'UI admin | Corrigé par @JsonIgnore + auth serveur | Déjà corrigé |
+| VULN-32 | Image Docker complète | Pas bloquant pour la démo | JRE Alpine déjà en place |
+| VULN-38 | Pas de rotation des logs | Rotation configurée (10 Mo, 7 jours) | Déjà corrigé |
+| VULN-39 | Échecs de connexion non loggés | Échecs désormais loggés | Déjà corrigé |
+| VULN-41 | Fallback mot de passe en clair | BCrypt lève une exception si échec | Déjà corrigé |
+| VULN-42 | Tous les comptes même mot de passe | Mots de passe désormais différents | Déjà corrigé |
+| VULN-43 | Données NDA dans les projets de test | Données fictives supprimées | Déjà corrigé |
+| VULN-45 | Pas de healthcheck Docker | Non bloquant pour la démo | Healthcheck MariaDB ajouté |
 
 ---
 
