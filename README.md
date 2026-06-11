@@ -1,8 +1,17 @@
 # DevFolio
 
-Application portfolio étudiant — Spring Boot 3.2 + Vue 3 + MariaDB
+Application portfolio étudiant : Spring Boot 3.2 + Vue 3 + MariaDB
 
 > Projet pédagogique de sécurisation. Les clés et identifiants présents dans le dépôt sont **fictifs** (exemples AWS, mots de passe de test). En production, tous les secrets doivent être externalisés et les credentials révoqués si compromis.
+
+## Branches
+
+| Branche | Description |
+|---------|-------------|
+| `main` | Version vulnérable originale, conservée pour la démonstration pédagogique |
+| `correction` | Version sécurisée avec les corrections OWASP Top 10 2025 |
+
+Les fichiers `README.md` et `docs/` sont synchronisés sur les deux branches.
 
 ## Démarrage
 
@@ -29,3 +38,4 @@ docker-compose up --build
 - [Mapping OWASP Top 10 2025](docs/02-owasp-mapping.md)
 - [Plan d'action](docs/03-plan-action.md)
 - [Infrastructure](docs/04-infrastructure.md)
+- [Installation du projet sur Linux](docs/05-installation-linux.md)
