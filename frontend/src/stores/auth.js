@@ -13,7 +13,18 @@ export const useAuthStore = defineStore('auth', {
       sessionStorage.setItem('devfolio_token', token)
       sessionStorage.setItem('devfolio_user', JSON.stringify(user))
     },
-    logout() {
+    async logout() {
+      // A07-05 : invalider le token côté serveur (blacklist)
+      if (this.token) {
+        try {
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${this.token}` }
+          })
+        } catch {
+          // Même si l'appel échoue, on nettoie le côté client
+        }
+      }
       this.token = null
       this.user = null
       sessionStorage.removeItem('devfolio_token')

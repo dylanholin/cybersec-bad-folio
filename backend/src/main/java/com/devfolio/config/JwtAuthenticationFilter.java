@@ -1,6 +1,7 @@
 package com.devfolio.config;
 
 import com.devfolio.service.JwtService;
+import com.devfolio.service.TokenBlacklistService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -22,9 +23,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtService jwtService;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, TokenBlacklistService tokenBlacklistService) {
         this.jwtService = jwtService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -37,8 +40,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
             try {
-                Claims claims = jwtService.validateToken(header.substring(7));
+                Claims claims = jwtService.validateToken(token);
+
+                // A07-05 : vérifier la blacklist (token invalidé par logout)
+                if (tokenBlacklistService.isBlacklisted(token)) {
+                    log.warn("[JWT Filter] Token blacklisté pour {} {}", method, uri);
+                    SecurityContextHolder.clearContext();
+                    chain.doFilter(request, response);
+                    return;
+                }
+
                 String role = claims.get("role", String.class);
                 Long userId = claims.get("userId", Integer.class).longValue();
 

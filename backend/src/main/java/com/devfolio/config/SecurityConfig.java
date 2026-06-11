@@ -1,6 +1,7 @@
 package com.devfolio.config;
 
 import com.devfolio.service.JwtService;
+import com.devfolio.service.TokenBlacklistService;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,8 +22,8 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService) {
-        return new JwtAuthenticationFilter(jwtService);
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, TokenBlacklistService tokenBlacklistService) {
+        return new JwtAuthenticationFilter(jwtService, tokenBlacklistService);
     }
 
     @Bean
