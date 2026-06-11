@@ -88,44 +88,55 @@ ADMIN_EMAIL=admin@devfolio.com
 ADMIN_PASSWORD=admin123
 ```
 
-Charger les variables dans le shell :
+Charger les variables dans le shell (obligatoire avant chaque lancement du backend) :
 
 ```bash
-set +H  # désactiver l'history expansion de bash
+set +H  # désactiver l'history expansion de bash (nécessaire si un mot de passe contient !)
 export $(grep -v '^#' .env | grep -v '^$' | xargs)
 ```
 
----
-
-## 3. Compiler et lancer le backend
+Ou exporter manuellement :
 
 ```bash
+set +H
+export DB_HOST=localhost DB_PORT=3306 DB_NAME=devfolio
+export DB_USER=devfolio_app DB_PASSWORD='DevfolioApp2024!'
+export JWT_SECRET='votre-secret-généré-avec-openssl'
+export JWT_EXPIRATION=3600000
+export ADMIN_EMAIL=admin@devfolio.com ADMIN_PASSWORD=admin123
+```
+
+> **Important** : les variables d'environnement ne persistent pas entre les sessions. Il faut les recharger à chaque ouverture de terminal.
+
+---
+
+## 3. Lancer le backend et le frontend
+
+Le backend et le frontend tournent en continu. Il faut **deux terminaux séparés**.
+
+### Terminal 1 : Backend
+
+```bash
+cd /home/user/Downloads/cybersec-bad-folio-main
+set +H
+export $(grep -v '^#' .env | grep -v '^$' | xargs)
 cd backend
-mvn clean compile
 mvn spring-boot:run
 ```
 
-Vérifier que le backend démarre : http://localhost:8080/api
+Attendre le message `Started DevfolioApplication` dans les logs.
 
----
+Vérifier : http://localhost:8080/api/projects doit retourner du JSON.
 
-## 4. Compiler et lancer le frontend
+### Terminal 2 : Frontend
 
 ```bash
-cd frontend
-npm install
+cd /home/user/Downloads/cybersec-bad-folio-main/frontend
+npm install  # uniquement la première fois
 npm run dev
 ```
 
-Le frontend est accessible sur http://localhost:5173 (Vite dev server).
-
-Pour un build de production :
-
-```bash
-npm run build
-```
-
-Les fichiers statiques sont générés dans `frontend/dist/`.
+Ouvrir le navigateur sur : **http://localhost:5173**
 
 ---
 
