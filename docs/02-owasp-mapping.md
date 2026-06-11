@@ -4,12 +4,12 @@ Référence : https://owasp.org/Top10/2025/
 
 ---
 
-## A01 — Broken Access Control
+## A01 : Broken Access Control
 
 | Réf | Vulnérabilité | Fichier | Criticité |
 |-----|---------------|---------|-----------|
 | A01-01 | Toutes les routes sont `permitAll()` | `SecurityConfig.java:42` | 🔴 CRITIQUE |
-| A01-01b | Absence de filtre JWT — SecurityConfig ne peut jamais authentifier | Aucun filtre dans `config/` | 🔴 CRITIQUE |
+| A01-01b | Absence de filtre JWT : SecurityConfig ne peut jamais authentifier | Aucun filtre dans `config/` | 🔴 CRITIQUE |
 | A01-02 | Suppression de projet sans contrôle de propriété | `ProjectController.java:56` | 🟠 HAUTE |
 | A01-03 | Endpoint admin sans vérification de rôle | `SecurityConfig.java:37`, `UserController.java:19` | 🔴 CRITIQUE |
 | A01-04 | Modification de profil/projet sans contrôle d'identité | `UserController.java:33`, `ProjectController.java:39` | 🟠 HAUTE |
@@ -20,7 +20,7 @@ Référence : https://owasp.org/Top10/2025/
 
 ---
 
-## A02 — Cryptographic Failures
+## A02 : Cryptographic Failures
 
 | Réf | Vulnérabilité | Fichier | Criticité |
 |-----|---------------|---------|-----------|
@@ -36,7 +36,7 @@ Référence : https://owasp.org/Top10/2025/
 
 ---
 
-## A03 — Injection
+## A03 : Injection
 
 | Réf | Vulnérabilité | Fichier | Criticité |
 |-----|---------------|---------|-----------|
@@ -48,7 +48,7 @@ Référence : https://owasp.org/Top10/2025/
 
 ---
 
-## A04 — Insecure Design
+## A04 : Insecure Design
 
 | Réf | Vulnérabilité | Fichier | Criticité |
 |-----|---------------|---------|-----------|
@@ -61,7 +61,7 @@ Référence : https://owasp.org/Top10/2025/
 
 ---
 
-## A05 — Security Misconfiguration
+## A05 : Security Misconfiguration
 
 | Réf | Vulnérabilité | Fichier | Criticité |
 |-----|---------------|---------|-----------|
@@ -77,18 +77,18 @@ Référence : https://owasp.org/Top10/2025/
 
 ---
 
-## A06 — Vulnerable and Outdated Components
+## A06 : Vulnerable and Outdated Components
 
 | Réf | Vulnérabilité | Fichier | Criticité |
 |-----|---------------|---------|-----------|
-| A06-01 | Log4Shell — Log4j 2.14.1 | `pom.xml:49` | 🔴 CRITIQUE |
+| A06-01 | Log4Shell : Log4j 2.14.1 | `pom.xml:49` | 🔴 CRITIQUE |
 | A06-02 | Axios 0.21.1 vulnérable (CVE-2021-3749) | `package.json:15` | 🟡 MOYENNE |
 
 **Total : 2 vulnérabilités**
 
 ---
 
-## A07 — Identification and Authentication Failures
+## A07 : Identification and Authentication Failures
 
 | Réf | Vulnérabilité | Fichier | Criticité |
 |-----|---------------|---------|-----------|
@@ -102,7 +102,7 @@ Référence : https://owasp.org/Top10/2025/
 
 ---
 
-## A08 — Software and Data Integrity Failures
+## A08 : Software and Data Integrity Failures
 
 | Réf | Vulnérabilité | Fichier | Criticité |
 |-----|---------------|---------|-----------|
@@ -112,7 +112,7 @@ Référence : https://owasp.org/Top10/2025/
 
 ---
 
-## A09 — Security Logging and Monitoring Failures
+## A09 : Security Logging and Monitoring Failures
 
 | Réf | Vulnérabilité | Fichier | Criticité |
 |-----|---------------|---------|-----------|
@@ -124,7 +124,7 @@ Référence : https://owasp.org/Top10/2025/
 
 ---
 
-## A10 — Server-Side Request Forgery (SSRF)
+## A10 : Server-Side Request Forgery (SSRF)
 
 | Réf | Vulnérabilité | Fichier | Criticité |
 |-----|---------------|---------|-----------|
@@ -139,16 +139,16 @@ Référence : https://owasp.org/Top10/2025/
 
 | Catégorie OWASP | Nombre | Criticité max |
 |-----------------|--------|---------------|
-| A01 — Broken Access Control | 7 | 🔴 CRITIQUE |
-| A02 — Cryptographic Failures | 7 | 🟠 HAUTE |
-| A03 — Injection | 3 | 🔴 CRITIQUE |
-| A04 — Insecure Design | 4 | 🟡 MOYENNE |
-| A05 — Security Misconfiguration | 7 | 🟠 HAUTE |
-| A06 — Vulnerable Components | 2 | 🔴 CRITIQUE |
-| A07 — Auth Failures | 5 | 🔴 CRITIQUE |
-| A08 — Integrity Failures | 1 | 🟡 MOYENNE |
-| A09 — Logging Failures | 3 | 🟠 HAUTE |
-| A10 — SSRF | 2 | 🔴 CRITIQUE |
+| A01 : Broken Access Control | 7 | 🔴 CRITIQUE |
+| A02 : Cryptographic Failures | 7 | 🟠 HAUTE |
+| A03 : Injection | 3 | 🔴 CRITIQUE |
+| A04 : Insecure Design | 4 | 🟡 MOYENNE |
+| A05 : Security Misconfiguration | 7 | 🟠 HAUTE |
+| A06 : Vulnerable Components | 2 | 🔴 CRITIQUE |
+| A07 : Auth Failures | 5 | 🔴 CRITIQUE |
+| A08 : Integrity Failures | 1 | 🟡 MOYENNE |
+| A09 : Logging Failures | 3 | 🟠 HAUTE |
+| A10 : SSRF | 2 | 🔴 CRITIQUE |
 | **Total** | **41** | — |
 
 > Les vulnérabilités restantes (DEV-xx) sont des problèmes d'infrastructure non directement classés dans les catégories OWASP mais liés à A05 (Security Misconfiguration).

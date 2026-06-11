@@ -72,11 +72,11 @@ cybersec-bad-folio-main/
 
 | Service   | Port exposé | Rôle                        |
 |-----------|-------------|-----------------------------|
-| frontend  | 80          | Nginx — sert le SPA Vue.js  |
+| frontend  | 80          | Nginx : sert le SPA Vue.js  |
 | backend   | 8080        | Spring Boot API REST        |
 | mariadb   | 3306        | Base de données             |
 
-> 🔴 Le port MariaDB (3306) est exposé sur `0.0.0.0` — accessible depuis l'extérieur.
+> 🔴 Le port MariaDB (3306) est exposé sur `0.0.0.0`, accessible depuis l'extérieur.
 > 🔴 Le port de debug JVM (5005) est exposé dans le Dockerfile backend.
 
 ---

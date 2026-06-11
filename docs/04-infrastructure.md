@@ -1,4 +1,4 @@
-# Analyse infrastructure — Docker, réseau, configuration
+# Analyse infrastructure : Docker, réseau, configuration
 
 ## Vue d'ensemble de l'infrastructure
 
@@ -19,9 +19,9 @@
 
 ---
 
-## docker-compose.yml — Problèmes identifiés
+## docker-compose.yml : problèmes identifiés
 
-### 🔴 DEV-03 — MariaDB exposé sur 0.0.0.0
+### 🔴 DEV-03 : MariaDB exposé sur 0.0.0.0
 
 ```yaml
 ports:
@@ -40,7 +40,7 @@ Ou mieux : ne pas exposer le port du tout (le backend y accède via le réseau D
 
 ---
 
-### 🔴 DEV-04 — Mot de passe root trivial + pas de compte applicatif
+### 🔴 DEV-04 : mot de passe root trivial + pas de compte applicatif
 
 ```yaml
 MYSQL_ROOT_PASSWORD: root
@@ -59,7 +59,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON devfolio.* TO 'devfolio_app'@'%';
 
 ---
 
-### 🔴 DEV-05 — Pas de réseau isolé
+### 🔴 DEV-05 : pas de réseau isolé
 
 Aucune section `networks` déclarée. Tous les conteneurs sont sur le réseau bridge par défaut et peuvent communiquer librement.
 
@@ -86,7 +86,7 @@ Ainsi le frontend ne peut pas accéder directement à la base de données.
 
 ---
 
-### 🔴 DEV-06 — Bind mount sans restriction
+### 🔴 DEV-06 : bind mount sans restriction
 
 ```yaml
 volumes:
@@ -107,7 +107,7 @@ volumes:
 
 ---
 
-### 🔴 DEV-07 — Secrets en dur dans docker-compose
+### 🔴 DEV-07 : secrets en dur dans docker-compose
 
 ```yaml
 SPRING_DATASOURCE_PASSWORD: root
@@ -126,9 +126,9 @@ backend:
 
 ---
 
-## Backend Dockerfile — Problèmes identifiés
+## Backend Dockerfile : problèmes identifiés
 
-### 🔴 DEV-07 — Image complète au lieu de JRE alpine
+### 🔴 DEV-07 : image complète au lieu de JRE alpine
 
 ```dockerfile
 FROM openjdk:21
@@ -143,7 +143,7 @@ FROM eclipse-temurin:21-jre-alpine
 
 ---
 
-### 🔴 DEV-08 — Conteneur tourne en root
+### 🔴 DEV-08 : conteneur tourne en root
 
 Pas de directive `USER`. Le processus Java tourne en root à l'intérieur du conteneur.
 
@@ -155,7 +155,7 @@ USER appuser
 
 ---
 
-### 🔴 DEV-08 — Port de debug JVM exposé
+### 🔴 DEV-08 : port de debug JVM exposé
 
 ```dockerfile
 EXPOSE 8080 5005
@@ -172,11 +172,11 @@ CMD ["java", "-jar", "app.jar"]
 
 ---
 
-### 🔴 DEV-09 — Pas de .dockerignore
+### 🔴 DEV-09 : pas de .dockerignore
 
 Sans `.dockerignore`, le `COPY . .` (bien que non présent ici, le `COPY src ./src` est utilisé) pourrait copier des fichiers sensibles dans le contexte de build.
 
-**Correction — créer `backend/.dockerignore` :**
+**Correction : créer `backend/.dockerignore` :**
 ```
 .env
 target/
@@ -187,7 +187,7 @@ target/
 
 ---
 
-### 🔴 DEV-12 — `ddl-auto=update` en production
+### 🔴 DEV-12 : `ddl-auto=update` en production
 
 ```properties
 spring.jpa.hibernate.ddl-auto=update
@@ -209,7 +209,7 @@ spring.jpa.hibernate.ddl-auto=validate
 
 ---
 
-## Frontend — Problèmes identifiés
+## Frontend : problèmes identifiés
 
 ### 🔴 HTTP uniquement
 
@@ -236,7 +236,7 @@ server {
 
 Aucun en-tête de sécurité n'est configuré.
 
-**Correction — ajouter dans le bloc `server` :**
+**Correction : ajouter dans le bloc `server` :**
 ```nginx
 add_header X-Content-Type-Options "nosniff" always;
 add_header X-Frame-Options "DENY" always;
