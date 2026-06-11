@@ -1,4 +1,4 @@
-# Plan d'action priorisé — Sécurisation DevFolio
+# Plan d'action priorisé : sécurisation DevFolio
 
 ## Contexte
 
@@ -8,27 +8,32 @@ L'application doit être sécurisée avant déploiement. Tous les problèmes ne 
 
 ---
 
-## 🔴 Phase 1 — Bloquants critiques
+## 🔴 Phase 1 : bloquants critiques
 
 Ces vulnérabilités permettent une compromission totale sans effort.
 
 | # | Vulnérabilité | Action | Fichier(s) |
 |---|---------------|--------|------------|
-| 1 | **VULN-06b** — Absence de filtre JWT | Créer `JwtAuthenticationFilter` + l'enregistrer dans `SecurityConfig` | Nouveau `config/JwtAuthenticationFilter.java`, `SecurityConfig.java` |
-| 2 | **VULN-04** — JWT alg:none | Supprimer le fallback de parsing non signé, ne garder que `parseClaimsJws()` | `JwtService.java:44-53` |
-| 3 | **VULN-01** — Injection SQL | Remplacer par requête paramétrée JPA (`@Query` avec `:q` ou méthode dérivée) | `SearchController.java`, `ProjectRepository.java` |
-| 4 | **VULN-07** — Log4Shell | Supprimer la dépendance `log4j-core` (Spring Boot utilise déjà Logback) | `pom.xml:45-50` |
-| 5 | **VULN-05** — JWT sans expiration | Ajouter `.setExpiration()` + propriété `jwt.expiration` | `JwtService.java:29` |
-| 6 | **VULN-06** — Contrôle d'accès inopérant | Remplacer `permitAll()` par des restrictions de rôle + routes publiques | `SecurityConfig.java:35-43` |
+| 1 | **VULN-Absence de filtre JWT | Créer `JwtAuthenticationFilter` + l'enregistrer dans `SecurityConfig` | Nouveau `config/JwtAuthenticationFilter.java`, `SecurityConfig.java` |
+| 2 | **VULN-JWT alg:none | Supprimer le fallback de parsing non signé, ne garder que `parseClaimsJws()` | `JwtService.java:44-53` |
+| 3 | **VULN-Injection SQL | Remplacer par requête paramétrée JPA (`@Query` avec `:q` ou méthode dérivée) | `SearchController.java`, `ProjectRepository.java` |
+| 4 | **VULN-Log4Shell | Supprimer la dépendance `log4j-core` (Spring Boot utilise déjà Logback) | `pom.xml:45-50` |
+| 5 | **VULN-JWT sans expiration | Ajouter `.setExpiration()` + propriété `jwt.expiration` | `JwtService.java:29` |
+| 6 | **VULN-Contrôle d'accès inopérant | Remplacer `permitAll()` par des restrictions de rôle + routes publiques | `SecurityConfig.java:35-43` |
 
 **Corrections détaillées :**
 
-### 1 — Filtre JWT (prérequis pour 5, 10, 11)
+### 1 : filtre JWT (prérequis pour 5, 10, 11)
+
+> **Note** : le filtre ne doit **pas** être annoté `@Component`. Sinon Spring Boot l'enregistre comme filtre servlet global en plus de la chaîne Spring Security, ce qui bloque les POST anonymes (403). Il faut le déclarer comme `@Bean` dans `SecurityConfig` et ajouter un `FilterRegistrationBean` avec `enabled=false` pour empêcher l'enregistrement automatique.
 
 ```java
-@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    @Autowired private JwtService jwtService;
+    private final JwtService jwtService;
+
+    public JwtAuthenticationFilter(JwtService jwtService) {
+        this.jwtService = jwtService;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -52,7 +57,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 }
 ```
 
-### 2 + 5 — JwtService corrigé (fallback + expiration)
+### 2 + 5 : JwtService corrigé (fallback + expiration)
 
 ```java
 @Service
@@ -84,9 +89,9 @@ public class JwtService {
 }
 ```
 
-Supprimer `parseUnsignedClaims`, l'import `DefaultClaims` et l'`ObjectMapper`. Le secret doit faire ≥ 32 octets pour HS256 (`secret123` du `.env` fera planter `hmacShaKeyFor` — générer avec `openssl rand -base64 48`).
+Supprimer `parseUnsignedClaims`, l'import `DefaultClaims` et l'`ObjectMapper`. Le secret doit faire ≥ 32 octets pour HS256 (`secret123` du `.env` fera planter `hmacShaKeyFor`, générer avec `openssl rand -base64 48`).
 
-### 3 — Injection SQL corrigée
+### 3 : injection SQL corrigée
 
 ```java
 // ProjectRepository.java
@@ -100,7 +105,7 @@ Ou via méthode dérivée :
 List<Project> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String title, String description);
 ```
 
-### 6 — SecurityConfig corrigé
+### 6 : SecurityConfig corrigé
 
 ```java
 @Bean
@@ -131,23 +136,23 @@ public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilte
 
 ---
 
-## 🟠 Phase 2 — Haute priorité
+## 🟠 Phase 2 : haute priorité
 
 | # | Vulnérabilité | Action | Fichier(s) |
 |---|---------------|--------|------------|
-| 7 | **VULN-02** — SSRF import GitHub | Whitelist `github.com` / `raw.githubusercontent.com`, bloquer IP privées | `ProjectController.java` |
-| 8 | **VULN-03** — SSRF avatar | Whitelist domaines images, bloquer IP privées, protocole HTTPS uniquement | `AvatarController.java` |
-| 9 | **VULN-10** — Secrets hardcodés | Ajouter `.env` au `.gitignore`, créer `.env.example`, utiliser `env_file` dans docker-compose | `.gitignore`, `docker-compose.yml` |
-| 10 | **VULN-08** — MD5 sans sel | Remplacer par `BCryptPasswordEncoder`, supprimer `md5Hash()`, ré-initialiser les comptes seed | `SecurityConfig.java`, `AuthService.java` |
-| 11 | **VULN-07b** — Mots de passe dans les réponses JSON | Ajouter `@JsonProperty(access = WRITE_ONLY)` sur `getPassword()` | `User.java:33` |
-| 12 | **VULN-11** — Élévation de privilèges | Exclure `role` de la mise à jour utilisateur, vérifier l'identité via `Authentication` | `UserController.java` |
-| 13 | **VULN-12** — IDOR sur les projets | Vérifier `project.getOwnerId() == currentUserId` avant PUT/DELETE | `ProjectController.java` |
-| 14 | **VULN-09** — XSS stocké | Remplacer `v-html` par `{{ user.bio }}` | `ProfileView.vue:35` |
-| 15 | **VULN-13** — CORS ouvert | Limiter au domaine du frontend (déjà corrigé dans Phase 1 point 6) | `SecurityConfig.java` |
+| 7 | **VULN-SSRF import GitHub | Whitelist `github.com` / `raw.githubusercontent.com`, bloquer IP privées | `ProjectController.java` |
+| 8 | **VULN-SSRF avatar | Whitelist domaines images, bloquer IP privées, protocole HTTPS uniquement | `AvatarController.java` |
+| 9 | **VULN-Secrets hardcodés | Ajouter `.env` au `.gitignore`, créer `.env.example`, utiliser `env_file` dans docker-compose | `.gitignore`, `docker-compose.yml` |
+| 10 | **VULN-MD5 sans sel | Remplacer par `BCryptPasswordEncoder`, supprimer `md5Hash()`, ré-initialiser les comptes seed | `SecurityConfig.java`, `AuthService.java` |
+| 11 | **VULN-Mots de passe dans les réponses JSON | Ajouter `@JsonProperty(access = WRITE_ONLY)` sur `getPassword()` | `User.java:33` |
+| 12 | **VULN-Élévation de privilèges | Exclure `role` de la mise à jour utilisateur, vérifier l'identité via `Authentication` | `UserController.java` |
+| 13 | **VULN-IDOR sur les projets | Vérifier `project.getOwnerId() == currentUserId` avant PUT/DELETE | `ProjectController.java` |
+| 14 | **VULN-XSS stocké | Remplacer `v-html` par `{{ user.bio }}` | `ProfileView.vue:35` |
+| 15 | **VULN-CORS ouvert | Limiter au domaine du frontend (déjà corrigé dans Phase 1 point 6) | `SecurityConfig.java` |
 
 **Corrections détaillées :**
 
-### 7 + 8 — SSRF corrigé (UrlValidator partagé)
+### 7 + 8 : SSRF corrigé (UrlValidator partagé)
 
 ```java
 public final class UrlValidator {
@@ -170,7 +175,7 @@ public final class UrlValidator {
 }
 ```
 
-### 10 — BCrypt
+### 10 : BCrypt
 
 ```java
 // SecurityConfig.java
@@ -181,7 +186,7 @@ public PasswordEncoder passwordEncoder() {
 ```
 
 ```java
-// AuthService.java — supprimer md5Hash(), ajouter validation
+// AuthService.java : supprimer md5Hash(), ajouter validation
 public User register(String email, String password) {
     if (password == null || password.length() < 12)
         throw new IllegalArgumentException("Mot de passe trop court (12 caractères min.)");
@@ -194,7 +199,7 @@ public User register(String email, String password) {
 }
 ```
 
-### 12 — UserController corrigé
+### 12 : UserController corrigé
 
 ```java
 @PutMapping("/users/{id}")
@@ -214,7 +219,7 @@ public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User upd
 
 Idéalement, remplacer `@RequestBody User` par un DTO `UpdateUserRequest(email, bio)` pour éliminer structurellement le mass assignment.
 
-### 14 — XSS corrigé
+### 14 : XSS corrigé
 
 ```html
 <!-- Avant -->
@@ -225,36 +230,36 @@ Idéalement, remplacer `@RequestBody User` par un DTO `UpdateUserRequest(email, 
 
 ---
 
-## 🟡 Phase 3 — Moyenne priorité
+## 🟡 Phase 3 : moyenne priorité
 
 | # | Vulnérabilité | Action | Fichier(s) |
 |---|---------------|--------|------------|
-| 16 | **VULN-17** — Actuator entièrement exposé | Limiter à `health`, désactiver `env/heapdump/shutdown` | `application.properties` |
-| 17 | **VULN-18** — Stacktraces exposées | `include-stacktrace=never` | `application.properties` |
-| 18 | **VULN-19** — DEBUG en production | Passer à `WARN` | `application.properties` |
-| 19 | **VULN-20** — Port debug JVM | Supprimer `-agentlib:jdwp` et `EXPOSE 5005` | `backend/Dockerfile` |
-| 20 | **VULN-15** — Log injection | Utiliser des paramètres de log structurés (`log.info("Login: {}", email)`) | `AuthController.java` |
-| 21 | **VULN-16** — Mots de passe loggés | Supprimer les logs de mots de passe | `AuthController.java`, `AuthService.java` |
-| 22 | **VULN-22** — Énumération utilisateurs | Message générique "Identifiants incorrects" | `AuthController.java` |
-| 23 | **VULN-26** — Pas de CSP | Ajouter en-tête CSP dans Nginx | `nginx.conf` |
-| 24 | **VULN-27** — Scripts CDN sans SRI | Ajouter attributs `integrity` | `index.html` |
-| 25 | **VULN-30** — Axios vulnérable | Mettre à jour axios ≥ 0.22.0 | `package.json` |
-| 26 | **VULN-14** — CSRF désactivé | Documenter le choix stateless (JWT en header Authorization = pas de vecteur CSRF) | `SecurityConfig.java` |
+| 16 | **VULN-Actuator entièrement exposé | Limiter à `health`, désactiver `env/heapdump/shutdown` | `application.properties` |
+| 17 | **VULN-Stacktraces exposées | `include-stacktrace=never` | `application.properties` |
+| 18 | **VULN-DEBUG en production | Passer à `WARN` | `application.properties` |
+| 19 | **VULN-Port debug JVM | Supprimer `-agentlib:jdwp` et `EXPOSE 5005` | `backend/Dockerfile` |
+| 20 | **VULN-Log injection | Utiliser des paramètres de log structurés (`log.info("Login: {}", email)`) | `AuthController.java` |
+| 21 | **VULN-Mots de passe loggés | Supprimer les logs de mots de passe | `AuthController.java`, `AuthService.java` |
+| 22 | **VULN-Énumération utilisateurs | Message générique "Identifiants incorrects" | `AuthController.java` |
+| 23 | **VULN-Pas de CSP | Ajouter en-tête CSP dans Nginx | `nginx.conf` |
+| 24 | **VULN-Scripts CDN sans SRI | Ajouter attributs `integrity` | `index.html` |
+| 25 | **VULN-Axios vulnérable | Mettre à jour axios ≥ 0.22.0 | `package.json` |
+| 26 | **VULN-CSRF désactivé | Documenter le choix stateless (JWT en header Authorization = pas de vecteur CSRF) | `SecurityConfig.java` |
 
 ---
 
-## 🔵 Phase 4 — Durcissement infrastructure
+## 🔵 Phase 4 : durcissement infrastructure
 
 | # | Vulnérabilité | Action | Fichier(s) |
 |---|---------------|--------|------------|
-| 27 | **VULN-35** — MariaDB sur 0.0.0.0 | Exposer sur `127.0.0.1` uniquement ou ne pas exposer | `docker-compose.yml` |
-| 28 | **VULN-31** — Conteneur en root | Ajouter `USER nobody` | `backend/Dockerfile` |
-| 29 | **VULN-33** — Pas de .dockerignore | Créer `.dockerignore` | `backend/.dockerignore` |
-| 30 | **VULN-34** — Pas de réseau isolé | Déclarer des réseaux Docker | `docker-compose.yml` |
-| 31 | **VULN-36** — Pas de compte BDD applicatif | Créer un utilisateur restreint | `init.sql` |
-| 32 | **VULN-37** — Pas de HTTPS | Configurer TLS Nginx (auto-signé pour demo) | `nginx.conf` |
-| 33 | **VULN-24** — JWT dans localStorage | Migrer vers cookie HttpOnly | `auth.js`, backend |
-| 34 | **VULN-44** — `ddl-auto=update` en prod | Passer à `validate` + Flyway/Liquibase | `application.properties` |
+| 27 | **VULN-MariaDB sur 0.0.0.0 | Exposer sur `127.0.0.1` uniquement ou ne pas exposer | `docker-compose.yml` |
+| 28 | **VULN-Conteneur en root | Ajouter `USER nobody` | `backend/Dockerfile` |
+| 29 | **VULN-Pas de .dockerignore | Créer `.dockerignore` | `backend/.dockerignore` |
+| 30 | **VULN-Pas de réseau isolé | Déclarer des réseaux Docker | `docker-compose.yml` |
+| 31 | **VULN-Pas de compte BDD applicatif | Créer un utilisateur restreint | `init.sql` |
+| 32 | **VULN-Pas de HTTPS | Configurer TLS Nginx (auto-signé pour demo) | `nginx.conf` |
+| 33 | **VULN-JWT dans localStorage | Migrer vers cookie HttpOnly | `auth.js`, backend |
+| 34 | **VULN-`ddl-auto=update` en prod | Passer à `validate` + Flyway/Liquibase | `application.properties` |
 
 ---
 

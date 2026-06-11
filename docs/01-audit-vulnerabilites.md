@@ -1,4 +1,4 @@
-# Audit de sécurité — Vulnérabilités identifiées
+# Audit de sécurité : vulnérabilités identifiées
 
 ## Méthodologie
 
@@ -10,16 +10,16 @@ L'audit a été réalisé en suivant les étapes du cours :
 
 ---
 
-## 🔴 CRITIQUE — Vulnérabilités bloquantes pour le déploiement
+## 🔴 CRITIQUE : vulnérabilités bloquantes pour le déploiement
 
-### VULN-01 — Injection SQL dans la recherche de projets
+### VULN-01 : injection SQL dans la recherche de projets
 
 | Champ | Valeur |
 |-------|--------|
 | **Réf** | A03-01 |
 | **Fichier** | `backend/src/main/java/com/devfolio/controller/SearchController.java:23` |
 | **Criticité** | 🔴 CRITIQUE |
-| **Exploitabilité** | Immédiate — paramètre `q` concaténé directement dans la requête SQL |
+| **Exploitabilité** | Immédiate : paramètre `q` concaténé directement dans la requête SQL |
 | **Impact** | Lecture/modification/suppression de toutes les données de la BDD |
 
 **Code vulnérable :**
@@ -35,14 +35,14 @@ String sql = "SELECT * FROM projects WHERE title LIKE '%" + q + "%' " +
 
 ---
 
-### VULN-02 — SSRF via import GitHub
+### VULN-02 : SSRF via import GitHub
 
 | Champ | Valeur |
 |-------|--------|
 | **Réf** | A10-02 |
 | **Fichier** | `backend/src/main/java/com/devfolio/controller/ProjectController.java:63` |
 | **Criticité** | 🔴 CRITIQUE |
-| **Exploitabilité** | Immédiate — aucune validation du domaine |
+| **Exploitabilité** | Immédiate : aucune validation du domaine |
 | **Impact** | Accès aux services internes, métadonnées cloud, fichiers locaux |
 
 **Code vulnérable :**
@@ -57,14 +57,14 @@ String content = new String(url.openStream().readAllBytes());
 
 ---
 
-### VULN-03 — SSRF via avatar URL
+### VULN-03 : SSRF via avatar URL
 
 | Champ | Valeur |
 |-------|--------|
 | **Réf** | A10-01 |
 | **Fichier** | `backend/src/main/java/com/devfolio/controller/AvatarController.java:25` |
 | **Criticité** | 🔴 CRITIQUE |
-| **Exploitabilité** | Immédiate — aucune validation |
+| **Exploitabilité** | Immédiate : aucune validation |
 | **Impact** | Scan du réseau interne, accès aux métadonnées cloud, lecture de fichiers |
 
 **Payloads :**
@@ -76,14 +76,14 @@ String content = new String(url.openStream().readAllBytes());
 
 ---
 
-### VULN-04 — JWT sans vérification de signature (alg:none)
+### VULN-04 : JWT sans vérification de signature (alg:none)
 
 | Champ | Valeur |
 |-------|--------|
 | **Réf** | A07-01 |
 | **Fichier** | `backend/src/main/java/com/devfolio/service/JwtService.java:44-53` |
 | **Criticité** | 🔴 CRITIQUE |
-| **Exploitabilité** | Immédiate — un attaquant peut forger un token admin |
+| **Exploitabilité** | Immédiate : un attaquant peut forger un token admin |
 | **Impact** | Usurpation d'identité, élévation de privilèges |
 
 **Code vulnérable :**
@@ -100,7 +100,7 @@ if (parts.length == 2 || (parts.length == 3 && parts[2].isEmpty())) {
 
 ---
 
-### VULN-05 — JWT sans expiration
+### VULN-05 : JWT sans expiration
 
 | Champ | Valeur |
 |-------|--------|
@@ -114,14 +114,14 @@ if (parts.length == 2 || (parts.length == 3 && parts[2].isEmpty())) {
 
 ---
 
-### VULN-06 — Contrôle d'accès inopérant (tout est permitAll)
+### VULN-06 : contrôle d'accès inopérant (tout est permitAll)
 
 | Champ | Valeur |
 |-------|--------|
 | **Réf** | A01-01, A01-03, A01-05 |
 | **Fichier** | `backend/src/main/java/com/devfolio/config/SecurityConfig.java:35-43` |
 | **Criticité** | 🔴 CRITIQUE |
-| **Exploitabilité** | Immédiate — aucun endpoint n'est protégé |
+| **Exploitabilité** | Immédiate : aucun endpoint n'est protégé |
 | **Impact** | Accès non autorisé à toutes les ressources, y compris admin |
 
 **Code vulnérable :**
@@ -135,15 +135,15 @@ if (parts.length == 2 || (parts.length == 3 && parts[2].isEmpty())) {
 
 ---
 
-### VULN-06b — Absence de filtre d'authentification JWT
+### VULN-06b : absence de filtre d'authentification JWT
 
 | Champ | Valeur |
 |-------|--------|
 | **Réf** | A01-01, A07-01 |
 | **Fichier** | Aucun filtre JWT n'existe dans `config/` |
 | **Criticité** | 🔴 CRITIQUE |
-| **Exploitabilité** | Immédiate — sans filtre, même avec `authenticated()` dans SecurityConfig, les requêtes ne sont jamais authentifiées |
-| **Impact** | Bloquant pour VULN-06, VULN-11, VULN-12 — toute restriction d'accès est inopérante sans ce filtre |
+| **Exploitabilité** | Immédiate : sans filtre, même avec `authenticated()` dans SecurityConfig, les requêtes ne sont jamais authentifiées |
+| **Impact** | Bloquant pour VULN-06, VULN-11, VULN-12 : toute restriction d'accès est inopérante sans ce filtre |
 
 **Problème :** Le projet génère et valide des tokens JWT (`JwtService`) mais n'a **aucun filtre Spring Security** pour extraire le token du header `Authorization` et peupler le `SecurityContext`. Sans ce filtre, remplacer `permitAll()` par `authenticated()` bloquerait tout, y compris les utilisateurs légitimes.
 
@@ -183,7 +183,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 ---
 
-### VULN-07 — Log4Shell (CVE-2021-44228)
+### VULN-07 : Log4Shell (CVE-2021-44228)
 
 | Champ | Valeur |
 |-------|--------|
@@ -202,9 +202,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 ---
 
-## 🟠 HAUTE — Vulnérabilités graves mais nécessitant plus de contexte
+## 🟠 HAUTE : vulnérabilités graves mais nécessitant plus de contexte
 
-### VULN-07b — Mots de passe exposés dans les réponses JSON
+### VULN-07b : mots de passe exposés dans les réponses JSON
 
 | Champ | Valeur |
 |-------|--------|
@@ -225,7 +225,7 @@ Ou plus simple, `@JsonIgnore` sur le getter. L'admin view côté frontend affich
 
 ---
 
-### VULN-08 — Mots de passe hashés en MD5 sans sel
+### VULN-08 : mots de passe hashés en MD5 sans sel
 
 | Champ | Valeur |
 |-------|--------|
@@ -238,7 +238,7 @@ Ou plus simple, `@JsonIgnore` sur le getter. L'admin view côté frontend affich
 
 ---
 
-### VULN-09 — XSS stocké via le champ bio
+### VULN-09 : XSS stocké via le champ bio
 
 | Champ | Valeur |
 |-------|--------|
@@ -258,7 +258,7 @@ Ou plus simple, `@JsonIgnore` sur le getter. L'admin view côté frontend affich
 
 ---
 
-### VULN-10 — Secrets hardcodés dans le dépôt
+### VULN-10 : secrets hardcodés dans le dépôt
 
 | Champ | Valeur |
 |-------|--------|
@@ -279,7 +279,7 @@ Ou plus simple, `@JsonIgnore` sur le getter. L'admin view côté frontend affich
 
 ---
 
-### VULN-11 — Élévation de privilèges via modification de rôle
+### VULN-11 : élévation de privilèges via modification de rôle
 
 | Champ | Valeur |
 |-------|--------|
@@ -297,7 +297,7 @@ user.setRole(updated.getRole()); // l'appelant peut s'auto-promouvoir ADMIN
 
 ---
 
-### VULN-12 — IDOR sur les projets et profils
+### VULN-12 : IDOR sur les projets et profils
 
 | Champ | Valeur |
 |-------|--------|
@@ -310,7 +310,7 @@ user.setRole(updated.getRole()); // l'appelant peut s'auto-promouvoir ADMIN
 
 ---
 
-### VULN-13 — CORS ouvert à tous
+### VULN-13 : CORS ouvert à tous
 
 | Champ | Valeur |
 |-------|--------|
@@ -323,7 +323,7 @@ user.setRole(updated.getRole()); // l'appelant peut s'auto-promouvoir ADMIN
 
 ---
 
-### VULN-14 — CSRF désactivé
+### VULN-14 : CSRF désactivé
 
 | Champ | Valeur |
 |-------|--------|
@@ -336,7 +336,7 @@ user.setRole(updated.getRole()); // l'appelant peut s'auto-promouvoir ADMIN
 
 ---
 
-### VULN-15 — Injection dans les logs (Log Injection)
+### VULN-15 : injection dans les logs (Log Injection)
 
 | Champ | Valeur |
 |-------|--------|
@@ -354,7 +354,7 @@ log.info("Login attempt for user: " + username);
 
 ---
 
-### VULN-16 — Mots de passe loggés en clair
+### VULN-16 : mots de passe loggés en clair
 
 | Champ | Valeur |
 |-------|--------|
@@ -367,9 +367,9 @@ log.info("Login attempt for user: " + username);
 
 ---
 
-## 🟡 MOYENNE — Problèmes importants mais moins directement exploitables
+## 🟡 MOYENNE : problèmes importants mais moins directement exploitables
 
-### VULN-17 — Actuator entièrement exposé
+### VULN-17 : actuator entièrement exposé
 
 | Champ | Valeur |
 |-------|--------|
@@ -382,7 +382,7 @@ log.info("Login attempt for user: " + username);
 
 ---
 
-### VULN-18 — Stacktraces exposées dans les réponses
+### VULN-18 : stacktraces exposées dans les réponses
 
 | Champ | Valeur |
 |-------|--------|
@@ -395,7 +395,7 @@ log.info("Login attempt for user: " + username);
 
 ---
 
-### VULN-19 — Debug activé en production
+### VULN-19 : debug activé en production
 
 | Champ | Valeur |
 |-------|--------|
@@ -408,7 +408,7 @@ log.info("Login attempt for user: " + username);
 
 ---
 
-### VULN-20 — Port de debug JVM exposé
+### VULN-20 : port de debug JVM exposé
 
 | Champ | Valeur |
 |-------|--------|
@@ -427,7 +427,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-21 — Aucune validation de complexité des mots de passe
+### VULN-21 : aucune validation de complexité des mots de passe
 
 | Champ | Valeur |
 |-------|--------|
@@ -440,7 +440,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-22 — Énumération d'utilisateurs
+### VULN-22 : énumération d'utilisateurs
 
 | Champ | Valeur |
 |-------|--------|
@@ -453,7 +453,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-23 — Token de reset dans l'URL
+### VULN-23 : token de reset dans l'URL
 
 | Champ | Valeur |
 |-------|--------|
@@ -466,7 +466,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-24 — JWT stocké dans localStorage
+### VULN-24 : JWT stocké dans localStorage
 
 | Champ | Valeur |
 |-------|--------|
@@ -479,7 +479,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-25 — Pas d'invalidation serveur des tokens JWT
+### VULN-25 : pas d'invalidation serveur des tokens JWT
 
 | Champ | Valeur |
 |-------|--------|
@@ -492,7 +492,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-26 — Pas de Content-Security-Policy
+### VULN-26 : pas de Content-Security-Policy
 
 | Champ | Valeur |
 |-------|--------|
@@ -505,7 +505,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-27 — Scripts CDN sans SRI
+### VULN-27 : scripts CDN sans SRI
 
 | Champ | Valeur |
 |-------|--------|
@@ -518,7 +518,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-28 — Protection admin côté client uniquement
+### VULN-28 : protection admin côté client uniquement
 
 | Champ | Valeur |
 |-------|--------|
@@ -531,7 +531,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-29 — Hashes MD5 affichés dans l'UI admin
+### VULN-29 : hashes MD5 affichés dans l'UI admin
 
 | Champ | Valeur |
 |-------|--------|
@@ -544,7 +544,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-30 — Axios vulnérable (CVE-2021-3749)
+### VULN-30 : axios vulnérable (CVE-2021-3749)
 
 | Champ | Valeur |
 |-------|--------|
@@ -557,9 +557,9 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-## 🔵 BASSE — Mauvaises pratiques et risques acceptables temporairement
+## 🔵 BASSE : mauvaises pratiques et risques acceptables temporairement
 
-### VULN-31 — Conteneur backend tourne en root
+### VULN-31 : conteneur backend tourne en root
 
 | Champ | Valeur |
 |-------|--------|
@@ -572,7 +572,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-32 — Image Docker complète au lieu d'alpine/JRE
+### VULN-32 : image Docker complète au lieu d'alpine/JRE
 
 | Champ | Valeur |
 |-------|--------|
@@ -585,7 +585,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-33 — Pas de .dockerignore
+### VULN-33 : pas de .dockerignore
 
 | Champ | Valeur |
 |-------|--------|
@@ -598,7 +598,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-34 — Pas de réseau Docker isolé
+### VULN-34 : pas de réseau Docker isolé
 
 | Champ | Valeur |
 |-------|--------|
@@ -611,7 +611,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-35 — MariaDB exposé sur 0.0.0.0
+### VULN-35 : MariaDB exposé sur 0.0.0.0
 
 | Champ | Valeur |
 |-------|--------|
@@ -624,7 +624,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-36 — Pas de compte applicatif BDD séparé
+### VULN-36 : pas de compte applicatif BDD séparé
 
 | Champ | Valeur |
 |-------|--------|
@@ -637,7 +637,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-37 — HTTP uniquement, pas de HTTPS
+### VULN-37 : HTTP uniquement, pas de HTTPS
 
 | Champ | Valeur |
 |-------|--------|
@@ -650,7 +650,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-38 — Pas de rotation des logs
+### VULN-38 : pas de rotation des logs
 
 | Champ | Valeur |
 |-------|--------|
@@ -663,7 +663,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-39 — Échecs de connexion non loggés
+### VULN-39 : échecs de connexion non loggés
 
 | Champ | Valeur |
 |-------|--------|
@@ -676,7 +676,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-40 — Pas de rate limiting sur le login
+### VULN-40 : pas de rate limiting sur le login
 
 | Champ | Valeur |
 |-------|--------|
@@ -689,7 +689,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-41 — Mot de passe fallback en clair si MD5 échoue
+### VULN-41 : mot de passe fallback en clair si MD5 échoue
 
 | Champ | Valeur |
 |-------|--------|
@@ -702,7 +702,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-42 — Tous les comptes partagent le même mot de passe
+### VULN-42 : tous les comptes partagent le même mot de passe
 
 | Champ | Valeur |
 |-------|--------|
@@ -715,7 +715,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-43 — Données confidentielles dans les projets de test
+### VULN-43 : données confidentielles dans les projets de test
 
 | Champ | Valeur |
 |-------|--------|
@@ -728,7 +728,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-44 — `spring.jpa.hibernate.ddl-auto=update` en production
+### VULN-44 : `spring.jpa.hibernate.ddl-auto=update` en production
 
 | Champ | Valeur |
 |-------|--------|
@@ -741,7 +741,7 @@ CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:50
 
 ---
 
-### VULN-45 — Pas de healthcheck Docker
+### VULN-45 : pas de healthcheck Docker
 
 | Champ | Valeur |
 |-------|--------|
