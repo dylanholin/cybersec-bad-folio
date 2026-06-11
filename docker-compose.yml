@@ -3,38 +3,34 @@ version: '3.8'
 services:
   mariadb:
     image: mariadb:10.11
-    # 🔴 DEV-03 : port 3306 exposé sur 0.0.0.0 (accessible depuis Internet)
     ports:
-      - "0.0.0.0:3306:3306"
+      - "127.0.0.1:3306:3306"
     environment:
-      # 🔴 DEV-04 : mot de passe root trivial
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: devfolio
-      # 🔴 DEV-04 : pas de compte applicatif séparé
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
     volumes:
-      # 🔴 DEV-06 : bind mount sans restriction
       - ./database:/docker-entrypoint-initdb.d
-      - /var/lib/mysql:/var/lib/mysql
-    # Pas de healthcheck
-    # Pas de réseau isolé
+      - db_data:/var/lib/mysql
+    networks:
+      - backend-db
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   backend:
     build: ./backend
-    # 🔴 : pas de depends_on avec condition healthy
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     ports:
       - "8080:8080"
-    environment:
-      # 🔴 DEV-07 : secrets en dur dans docker-compose (dupliqués du .env)
-      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/devfolio
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      JWT_SECRET: secret123
-      DEVFOLIO_ADMIN_PASSWORD: admin123
-      # 🔴 A05-06 : debug activé
-      DEBUG: "true"
-    # 🔴 DEV-05 : pas de network déclaré, utilise le réseau bridge par défaut
+    env_file:
+      - .env
+    networks:
+      - frontend-backend
+      - backend-db
 
   frontend:
     build: ./frontend
@@ -42,6 +38,12 @@ services:
       - "80:80"
     depends_on:
       - backend
-    # 🔴 : HTTP seulement, pas de redirection HTTPS
+    networks:
+      - frontend-backend
 
-# 🔴 DEV-05 : pas de section 'networks' — isolation réseau absente
+networks:
+  frontend-backend:
+  backend-db:
+
+volumes:
+  db_data:

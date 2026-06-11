@@ -1,0 +1,7 @@
+.env
+.env.*
+target/
+*.log
+.git
+.gitignore
+.mvn

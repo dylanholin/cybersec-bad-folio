@@ -2,15 +2,16 @@ package com.devfolio.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
-import java.security.MessageDigest;
-import java.util.HexFormat;
 import java.util.List;
 
 @Configuration
@@ -18,56 +19,41 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
         http
-            // 🔴 A05-03 : CSRF désactivé sans justification
+            // CSRF désactivé : justifié car API stateless avec JWT en header Authorization
+            // (pas de cookie de session = pas de vecteur CSRF)
             .csrf(csrf -> csrf.disable())
 
-            // 🔴 A01-05 : CORS ouvert à tous
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration config = new CorsConfiguration();
-                config.setAllowedOrigins(List.of("*"));
-                config.setAllowedMethods(List.of("*"));
-                config.setAllowedHeaders(List.of("*"));
+                config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost"));
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+                config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
                 return config;
             }))
 
             .authorizeHttpRequests(auth -> auth
-                // 🔴 A01-03 : endpoint admin accessible sans vérification de rôle
-                .requestMatchers("/api/admin/**").permitAll()
-                // 🔴 A05-01 : actuator sans protection
-                .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
-                // 🔴 A01-01 : toutes les autres routes également ouvertes
-                .anyRequest().permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/*",
+                                 "/api/users/*", "/api/search/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
             )
 
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            );
+            )
+
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // 🔴 A02-01 : MD5 au lieu de BCrypt
-        return new PasswordEncoder() {
-            @Override
-            public String encode(CharSequence raw) {
-                try {
-                    MessageDigest md = MessageDigest.getInstance("MD5");
-                    byte[] hash = md.digest(raw.toString().getBytes());
-                    return HexFormat.of().formatHex(hash);
-                } catch (Exception e) {
-                    return raw.toString();
-                }
-            }
-
-            @Override
-            public boolean matches(CharSequence raw, String encoded) {
-                return encode(raw).equals(encoded);
-            }
-        };
+        return new BCryptPasswordEncoder();
     }
 }

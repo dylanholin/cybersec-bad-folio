@@ -34,30 +34,20 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/login")
-    // 🔴 A04-01 : aucun rate limiting — brute force possible
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         String username = request.get("email");
         String password = request.get("password");
 
-        // 🔴 A03-04 : injection dans les logs (log injection)
-        log.info("Login attempt for user: " + username);
-
-        // 🔴 A09-01 : mot de passe loggé en clair
-        log.debug("Password received: " + password);
+        log.info("Login attempt for user: {}", username);
 
         Optional<User> userOpt = userRepository.findByEmail(username);
 
-        // 🔴 A04-02 : messages distincts → user enumeration
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body(Map.of("error", "Utilisateur inconnu"));
+        if (userOpt.isEmpty() || !passwordEncoder.matches(password, userOpt.get().getPassword())) {
+            log.warn("Failed login attempt for: {}", username);
+            return ResponseEntity.status(401).body(Map.of("error", "Identifiants incorrects"));
         }
 
         User user = userOpt.get();
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            // 🔴 A09-02 : echec non loggé
-            return ResponseEntity.status(401).body(Map.of("error", "Mot de passe incorrect"));
-        }
-
         String token = jwtService.generateToken(user);
         return ResponseEntity.ok(Map.of("token", token, "user", user));
     }
@@ -78,9 +68,8 @@ public class AuthController {
 
     @PostMapping("/reset-password/request")
     public ResponseEntity<?> requestReset(@RequestParam String email) {
-        String token = UUID.randomUUID().toString();
-        // 🔴 A04-03 : token dans l'URL (logs serveur, historique navigateur)
-        String resetUrl = "http://localhost:5173/reset-password?token=" + token + "&email=" + email;
-        return ResponseEntity.ok(Map.of("resetUrl", resetUrl));
+        // Le token doit être envoyé par email, pas retourné dans la réponse
+        log.info("Password reset requested for: {}", email);
+        return ResponseEntity.ok(Map.of("message", "Si le compte existe, un email de réinitialisation a été envoyé"));
     }
 }

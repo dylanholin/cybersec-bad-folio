@@ -4,9 +4,11 @@ import com.devfolio.model.User;
 import com.devfolio.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -16,8 +18,6 @@ public class UserController {
     private UserRepository userRepository;
 
     @GetMapping("/admin/users")
-    // 🔴 A01-03 : endpoint admin sans vérification de rôle ADMIN
-    // Retourne les hashes MD5 des mots de passe
     public ResponseEntity<List<User>> getAllUsers() {
         return ResponseEntity.ok(userRepository.findAll());
     }
@@ -30,12 +30,16 @@ public class UserController {
     }
 
     @PutMapping("/users/{id}")
-    // 🔴 A01-04 : modification de n'importe quel profil sans contrôle d'identité
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updated) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User updated,
+                                         Authentication authentication) {
+        Long currentUserId = (Long) authentication.getDetails();
+        if (!currentUserId.equals(id)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Accès refusé"));
+        }
         return userRepository.findById(id).map(user -> {
             user.setEmail(updated.getEmail());
-            user.setRole(updated.getRole()); // 🔴 : l'appelant peut s'auto-promouvoir ADMIN
             user.setBio(updated.getBio());
+            // role : volontairement NON modifiable par cet endpoint
             return ResponseEntity.ok(userRepository.save(user));
         }).orElse(ResponseEntity.notFound().build());
     }

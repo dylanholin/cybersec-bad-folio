@@ -1,8 +1,11 @@
 package com.devfolio.controller;
 
+import com.devfolio.util.UrlValidator;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Base64;
 import java.util.Map;
@@ -12,21 +15,18 @@ import java.util.Map;
 public class AvatarController {
 
     @PostMapping("/avatar")
-    // 🔴 A10-01 : SSRF — le serveur fetch n'importe quelle URL
-    // Exemples d'attaque :
-    //   ?url=http://169.254.169.254/latest/meta-data/  (AWS metadata)
-    //   ?url=http://localhost:8080/actuator/env         (services internes)
-    //   ?url=file:///etc/passwd                         (lecture fichiers locaux)
-    public ResponseEntity<?> setAvatarFromUrl(
-            @RequestParam String url,
-            @RequestHeader(value = "Authorization", required = false) String token) throws Exception {
-
-        // Aucune validation du domaine, du protocole, ou de la plage d'IP
-        URL avatarUrl = new URL(url);
-        byte[] imageData = avatarUrl.openStream().readAllBytes();
-
-        // Sauvegarde et retourne l'image fetchée
-        String base64 = Base64.getEncoder().encodeToString(imageData);
-        return ResponseEntity.ok(Map.of("avatar", "data:image/png;base64," + base64));
+    public ResponseEntity<?> setAvatarFromUrl(@RequestParam String url) {
+        try {
+            URL avatarUrl = UrlValidator.validate(url);
+            try (InputStream in = avatarUrl.openStream()) {
+                byte[] imageData = in.readNBytes((int) UrlValidator.getMaxFetchSize());
+                String base64 = Base64.getEncoder().encodeToString(imageData);
+                return ResponseEntity.ok(Map.of("avatar", "data:image/png;base64," + base64));
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Impossible de récupérer l'image"));
+        }
     }
 }
