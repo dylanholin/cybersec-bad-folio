@@ -23,6 +23,15 @@ public class AuthService {
         if (password == null || password.length() < 12) {
             throw new IllegalArgumentException("Mot de passe trop court (12 caractères minimum)");
         }
+        if (!password.matches(".*[A-Z].*")) {
+            throw new IllegalArgumentException("Le mot de passe doit contenir au moins une majuscule");
+        }
+        if (!password.matches(".*[0-9].*")) {
+            throw new IllegalArgumentException("Le mot de passe doit contenir au moins un chiffre");
+        }
+        if (!password.matches(".*[^a-zA-Z0-9].*")) {
+            throw new IllegalArgumentException("Le mot de passe doit contenir au moins un caractère spécial");
+        }
         log.info("Registering user: {}", email);
 
         User user = new User();
