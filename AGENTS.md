@@ -82,7 +82,9 @@ cybersec-bad-folio/
     ├── 01-audit-vulnerabilites.md
     ├── 02-owasp-mapping.md
     ├── 03-plan-action.md
-    └── 04-infrastructure.md
+    ├── 04-infrastructure.md
+    ├── 05-installation-linux.md
+    └── 06-corriger-essentiel-demo.md
 ```
 
 ## Développement local
@@ -95,8 +97,9 @@ cp .env.example .env   # Remplir les valeurs, JWT_SECRET >= 48 caractères
 docker-compose up --build
 ```
 
-- Frontend : http://localhost:80
-- Backend API : http://localhost:8080/api
+- Frontend : https://localhost (HTTPS avec certificat auto-signé en dev)
+- Backend API : https://localhost/api (via reverse proxy nginx)
+- Backend API (debug) : http://localhost:8080/api (accès direct, dev uniquement)
 - MariaDB : localhost:3306 (bind sur 127.0.0.1 uniquement)
 
 ### Accès direct au backend (sans Docker)
