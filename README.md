@@ -11,18 +11,25 @@ Application portfolio étudiant : Spring Boot 3.2 + Vue 3 + MariaDB
 | `main` | Version vulnérable originale, conservée pour la démonstration pédagogique |
 | `correction` | Version sécurisée avec les corrections OWASP Top 10 2025 |
 
-Les fichiers `README.md` et `docs/` sont synchronisés sur les deux branches.
+Les fichiers `docs/` sont synchronisés sur les deux branches.
 
 ## Démarrage
 
 ```bash
-cp .env.example .env
+cp .env.example .env   # Éditer .env avec vos propres valeurs
 docker-compose up --build
 ```
+
+### Branche `correction` (sécurisée)
 
 - Frontend : https://localhost (HTTPS avec certificat auto-signé en dev)
 - Backend API : https://localhost/api (via reverse proxy nginx)
 - Backend API (debug) : http://localhost:8080/api (accès direct, dev uniquement)
+
+### Branche `main` (vulnérable)
+
+- Frontend : http://localhost
+- Backend API : http://localhost:8080/api
 
 ## Comptes de test
 
