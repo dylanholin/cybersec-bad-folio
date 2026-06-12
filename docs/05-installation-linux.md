@@ -144,7 +144,7 @@ Ouvrir le navigateur sur : **http://localhost:5173**
 
 ---
 
-## 5. Vérification
+## 4. Vérification
 
 | Test | Commande / URL | Résultat attendu |
 |------|---------------|-------------------|

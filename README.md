@@ -21,7 +21,8 @@ docker-compose up --build
 ```
 
 - Frontend : https://localhost (HTTPS avec certificat auto-signé en dev)
-- Backend API : http://localhost:8080/api
+- Backend API : https://localhost/api (via reverse proxy nginx)
+- Backend API (debug) : http://localhost:8080/api (accès direct, dev uniquement)
 
 ## Comptes de test
 
@@ -39,3 +40,4 @@ docker-compose up --build
 - [Plan d'action](docs/03-plan-action.md)
 - [Infrastructure](docs/04-infrastructure.md)
 - [Installation du projet sur Linux](docs/05-installation-linux.md)
+- [Corriger l'essentiel avant la démo](docs/06-corriger-essentiel-demo.md)

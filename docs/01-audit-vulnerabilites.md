@@ -321,7 +321,7 @@ user.setRole(updated.getRole()); // l'appelant peut s'auto-promouvoir ADMIN
 | **Réf** | A01-05 |
 | **Fichier** | `SecurityConfig.java:27-33` |
 | **Criticité** | 🟠 HAUTE |
-| **Impact**** | Tout site web peut faire des requêtes à l'API au nom d'un utilisateur |
+| **Impact** | Tout site web peut faire des requêtes à l'API au nom d'un utilisateur |
 
 **Correction :** Limiter les origines au domaine du frontend.
 
@@ -347,7 +347,7 @@ user.setRole(updated.getRole()); // l'appelant peut s'auto-promouvoir ADMIN
 | **Réf** | A03-04 |
 | **Fichier** | `AuthController.java:43` |
 | **Criticité** | 🟠 HAUTE |
-| **Impact**** | Falsification des logs, masquage d'attaques |
+| **Impact** | Falsification des logs, masquage d'attaques |
 
 **Code vulnérable :**
 ```java
