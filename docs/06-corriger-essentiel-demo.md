@@ -1,10 +1,10 @@
-# Iteration 2 Jour 2 : Corriger l essentiel avant la demo
+# Itération 2 — Jour 2 : Corriger l'essentiel avant la démo
 
 ## Contexte
 
-Le CTO maintient la demonstration. Il faut corriger le plus dangereux avant la fin de la journee. L objectif n est pas la perfection, mais la reduction maximale des risques critiques avant deploiement.
+Le CTO maintient la démonstration. Il faut corriger le plus dangereux avant la fin de la journée. L'objectif n'est pas la perfection, mais la réduction maximale des risques critiques avant déploiement.
 
-Ce document constitue le livrable de la deuxieme journee. Il s appuie sur l audit initial (Jour 1) et documente les corrections realisees sur la branche `correction`.
+Ce document constitue le livrable de la deuxième journée. Il s'appuie sur l'audit initial (Jour 1) et documente les corrections réalisées sur la branche `correction`.
 
 ---
 
