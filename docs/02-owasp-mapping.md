@@ -1,3 +1,7 @@
+> **Suivi des corrections (Itération 2   Jour 2)** : les vulnérabilités corrigées sur la branche `correction` sont listées dans [06-corriger-essentiel-demo.md](06-corriger-essentiel-demo.md). Ce document conserve l'état initial (mapping Jour 1).
+>
+> ---
+>
 # Mapping OWASP Top 10 2025
 
 Référence : https://owasp.org/Top10/2025/
@@ -149,6 +153,6 @@ Référence : https://owasp.org/Top10/2025/
 | A08 : Integrity Failures | 1 | 🟡 MOYENNE |
 | A09 : Logging Failures | 3 | 🟠 HAUTE |
 | A10 : SSRF | 2 | 🔴 CRITIQUE |
-| **Total** | **41** | — |
+| **Total** | **41** |   |
 
 > Les vulnérabilités restantes (DEV-xx) sont des problèmes d'infrastructure non directement classés dans les catégories OWASP mais liés à A05 (Security Misconfiguration).

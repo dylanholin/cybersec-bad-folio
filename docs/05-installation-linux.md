@@ -1,3 +1,7 @@
+> **Suivi des corrections (Itération 2   Jour 2)** : les corrections réalisées sur la branche `correction` sont détaillées dans [06-corriger-essentiel-demo.md](06-corriger-essentiel-demo.md). Ce document conserve l'état initial (guide installation Jour 1).
+>
+> ---
+>
 # Installation et lancement sur Linux (Fedora / RHEL)
 
 Ce guide explique comment installer les dépendances et lancer DevFolio sur une workstation Linux sans Docker.
@@ -147,7 +151,7 @@ Ouvrir le navigateur sur : **http://localhost:5173**
 | Backend actif | `curl http://localhost:8080/api/projects` | Liste JSON des projets publics |
 | Login | `curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d '{"email":"admin@devfolio.com","password":"DevfolioAdmin2024!"}'` | Token JWT dans la réponse |
 | Rate limiting | Envoyer 6+ requêtes de login en moins d'une minute | 429 Too Many Requests |
-| Logout | `curl -X POST http://localhost:8080/api/auth/logout -H "Authorization: Bearer <token>"` | `{"message":"Déconnexion réussie"}` — token blacklisté |
+| Logout | `curl -X POST http://localhost:8080/api/auth/logout -H "Authorization: Bearer <token>"` | `{"message":"Déconnexion réussie"}`   token blacklisté |
 | Route protégée | `curl http://localhost:8080/api/admin/users` | 401 Unauthorized |
 | Route admin | `curl -H "Authorization: Bearer <token>" http://localhost:8080/api/admin/users` | Liste des utilisateurs (rôle ADMIN) |
 | Frontend | http://localhost:5173 | Page d'accueil DevFolio |

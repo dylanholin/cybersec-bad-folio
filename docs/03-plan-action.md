@@ -1,3 +1,7 @@
+> **Suivi des corrections (Itération 2   Jour 2)** : les corrections réalisées sur la branche `correction` sont détaillées dans [06-corriger-essentiel-demo.md](06-corriger-essentiel-demo.md). Ce document conserve l'état initial (plan d'action Jour 1).
+>
+> ---
+>
 # Plan d'action priorisé : sécurisation DevFolio
 
 ## Contexte
@@ -294,7 +298,7 @@ Les vulnérabilités suivantes sont **connues mais acceptées** pour la démo, �
 | Phase 2 | 🟠 HAUTE | 9 |
 | Phase 3 | 🟡 MOYENNE | 11 |
 | Phase 4 | 🔵 BASSE | 8 |
-| **Total** | — | **34** |
+| **Total** |   | **34** |
 
 > Les phases 1 et 2 sont prioritaires et doivent être terminées avant la démo. La Phase 1 est un prérequis bloquant pour la Phase 2 (points 12, 13 nécessitent le filtre JWT de la Phase 1).
 

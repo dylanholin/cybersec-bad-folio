@@ -1,3 +1,7 @@
+> **Suivi des corrections (Itération 2   Jour 2)** : les corrections réalisées sur la branche `correction` sont détaillées dans [06-corriger-essentiel-demo.md](06-corriger-essentiel-demo.md). Ce document conserve l'état initial (prise en main Jour 1).
+>
+> ---
+>
 # Prise en main du projet DevFolio
 
 ## Présentation
@@ -105,10 +109,10 @@ docker-compose up --build
 
 | Composant        | Version      | Problème connu                          |
 |------------------|--------------|-----------------------------------------|
-| Spring Boot      | 3.2.0        | —                                       |
+| Spring Boot      | 3.2.0        |                                         |
 | Log4j Core       | 2.14.1       | 🔴 CVE-2021-44228 (Log4Shell)           |
-| jjwt             | 0.11.5       | —                                       |
-| MariaDB JDBC     | 3.3.0        | —                                       |
+| jjwt             | 0.11.5       |                                         |
+| MariaDB JDBC     | 3.3.0        |                                         |
 | axios (frontend) | 0.21.1       | 🔴 CVE-2021-3749 (SSRF)                 |
-| Vue              | ^3.4.0       | —                                       |
+| Vue              | ^3.4.0       |                                         |
 | Bootstrap (CDN)  | 5.3.0        | 🔴 Pas de SRI (Subresource Integrity)   |
