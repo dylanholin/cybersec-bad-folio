@@ -9,5 +9,13 @@ node_modules/
 # OS
 .DS_Store
 
-# MANQUANT : .env n'est PAS dans ce fichier
-# MANQUANT : *.pem, *.key, secrets/
+# IDE
+.vscode/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
