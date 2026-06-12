@@ -1,3 +1,7 @@
+> **Suivi des corrections (Itération 2   Jour 2)** : les corrections d'infrastructure réalisées sur la branche `correction` sont détaillées dans [06-corriger-essentiel-demo.md](06-corriger-essentiel-demo.md). Ce document conserve l'état initial (analyse infrastructure Jour 1).
+>
+> ---
+>
 # Analyse infrastructure : Docker, réseau, configuration
 
 ## Vue d'ensemble de l'infrastructure

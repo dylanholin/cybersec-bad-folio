@@ -1,3 +1,7 @@
+> **Suivi des corrections (Iteration 2   Jour 2)** : les vulnérabilités corrigées sur la branche `correction` sont listées dans [06-corriger-essentiel-demo.md](06-corriger-essentiel-demo.md). Ce document conserve l'état initial (audit Jour 1).
+>
+> ---
+>
 # Audit de sécurité : vulnérabilités identifiées
 
 ## Méthodologie
