@@ -402,11 +402,16 @@ exit $FAIL
 
 ### Utilisation
 
+1. Copier le script ci dessus dans un fichier `verify_security.sh` à la racine du projet
+2. Rendre le script exécutable et le lancer :
+
 ```bash
 chmod +x verify_security.sh
 ./verify_security.sh https://localhost
 ```
 
+> **Prérequis** : `curl`, `nc` (netcat), `docker` (pour les tests 9 et 10). Ce script est conçu pour Linux/macOS (bash). Sur Windows, utiliser WSL ou Git Bash, ou adapter les commandes en PowerShell.
+>
 > **Note** : ce script utilise `curl -k` (insecure) car le certificat HTTPS est auto signé en développement. En production avec un certificat valide, retirer l'option `-k`.
 
 ### Intégration CI/CD

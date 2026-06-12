@@ -31,6 +31,23 @@ docker-compose up --build
 - Frontend : http://localhost
 - Backend API : http://localhost:8080/api
 
+## Tests validés (branche `correction`)
+
+Les vérifications suivantes ont été exécutées avec succès sur le backend (accès direct `http://localhost:8080/api`, sans Docker) :
+
+| Test | Résultat |
+|------|----------|
+| Injection SQL sur `/api/search/projects` | Bloquée (résultat vide) |
+| JWT `alg:none` (token falsifié) | Rejeté (401) |
+| Route admin sans token | 401 Unauthorized |
+| Actuator `/env` sans rôle ADMIN | 401 |
+| Actuator `/health` (public) | 200 OK |
+| SSRF avatar avec URL interne (`169.254.169.254`) | 400 Bad Request |
+| Rate limiting (5 tentatives/min sur login) | 429 Too Many Requests |
+| Logout + token blacklisté | Déconnexion réussie |
+
+Un script de vérification automatisée pour un déploiement Docker complet (HTTPS, conteneur non root, MariaDB non exposé) est disponible dans la [doc 06, section 7](docs/06-corriger-essentiel-demo.md#7-automatisation-des-vérifications-de-sécurité).
+
 ## Comptes de test
 
 | Email | Mot de passe | Rôle |

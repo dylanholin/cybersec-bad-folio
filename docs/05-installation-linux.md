@@ -121,7 +121,7 @@ Le backend et le frontend tournent en continu. Il faut **deux terminaux séparé
 ### Terminal 1 : Backend
 
 ```bash
-cd /home/user/Downloads/cybersec-bad-folio-main
+cd /chemin/vers/cybersec-bad-folio
 set +H
 export $(grep -v '^#' .env | grep -v '^$' | xargs)
 cd backend
@@ -135,7 +135,7 @@ Vérifier : http://localhost:8080/api/projects doit retourner du JSON.
 ### Terminal 2 : Frontend
 
 ```bash
-cd /home/user/Downloads/cybersec-bad-folio-main/frontend
+cd /chemin/vers/cybersec-bad-folio/frontend
 npm install  # uniquement la première fois
 npm run dev
 ```
@@ -150,8 +150,8 @@ Ouvrir le navigateur sur : **http://localhost:5173**
 |------|---------------|-------------------|
 | Backend actif | `curl http://localhost:8080/api/projects` | Liste JSON des projets publics |
 | Login | `curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d '{"email":"admin@devfolio.com","password":"DevfolioAdmin2024!"}'` | Token JWT dans la réponse |
-| Rate limiting | Envoyer 6+ requêtes de login en moins d'une minute | 429 Too Many Requests |
-| Logout | `curl -X POST http://localhost:8080/api/auth/logout -H "Authorization: Bearer <token>"` | `{"message":"Déconnexion réussie"}`   token blacklisté |
+| Rate limiting | Envoyer 5+ requêtes de login échouées en moins d'une minute | 429 Too Many Requests |
+| Logout | `curl -X POST http://localhost:8080/api/auth/logout -H "Authorization: Bearer <token>"` | `{"message":"Déconnexion réussie"}` (token blacklisté) |
 | Route protégée | `curl http://localhost:8080/api/admin/users` | 401 Unauthorized |
 | Route admin | `curl -H "Authorization: Bearer <token>" http://localhost:8080/api/admin/users` | Liste des utilisateurs (rôle ADMIN) |
 | Frontend | http://localhost:5173 | Page d'accueil DevFolio |
