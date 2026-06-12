@@ -1,4 +1,4 @@
-# Itération 2 — Jour 2 : Corriger l'essentiel avant la démo
+# Itération 2, Jour 2 : Corriger l'essentiel avant la démo
 
 ## Contexte
 
@@ -293,7 +293,139 @@ Les risques résiduels (basse criticité) sont liés à des limitations d'archit
 
 ---
 
-## 7. Notes détaillées sur deux vulnérabilités corrigées
+## 7. Automatisation des vérifications de sécurité
+
+### Script de vérification post déploiement
+
+Le script suivant automatise les principaux tests de sécurité définis dans la checklist (§5). Il peut être exécuté sur le serveur de démonstration après le déploiement pour valider rapidement l'état de sécurité.
+
+```bash
+#!/bin/bash
+# verify_security.sh : vérifications automatisées post déploiement
+# Usage : ./verify_security.sh [BASE_URL]
+# Exemple : ./verify_security.sh https://localhost
+
+BASE="${1:-https://localhost}"
+PASS=0
+FAIL=0
+
+check() {
+    local name="$1"
+    local actual="$2"
+    local expected="$3"
+    if echo "$actual" | grep -q "$expected"; then
+        echo "  ✅ $name"
+        PASS=$((PASS + 1))
+    else
+        echo "  ❌ $name (obtenu : $actual, attendu : $expected)"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
+echo "=== Vérifications de sécurité DevFolio ==="
+echo "Cible : $BASE"
+echo ""
+
+# 0. Obtenir un token JWT pour les tests authentifiés
+echo "  Connexion admin..."
+LOGIN_RESP=$(curl -sk -X POST "$BASE/api/auth/login" \
+    -H "Content-Type: application/json" \
+    -d '{"email":"admin@devfolio.com","password":"DevfolioAdmin2024!"}')
+TOKEN=$(echo "$LOGIN_RESP" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+if [ -z "$TOKEN" ]; then
+    echo "  ❌ Impossible de se connecter (vérifier les credentials)"
+    echo "  Réponse : $LOGIN_RESP"
+    exit 1
+fi
+echo "  ✅ Token obtenu"
+echo ""
+
+# 1. Injection SQL (la recherche littérale de "' OR '1'='1" doit retourner un résultat vide)
+RESP=$(curl -sk "$BASE/api/search/projects?q=' OR '1'='1")
+if echo "$RESP" | grep -q '"id"'; then
+    echo "  ❌ Injection SQL (des projets retournés, injection possible)"
+    FAIL=$((FAIL + 1))
+else
+    echo "  ✅ Injection SQL (résultat vide, injection bloquée)"
+    PASS=$((PASS + 1))
+fi
+
+# 2. JWT alg:none (token falsifié avec algorithme "none" doit être rejeté)
+FAKE_TOKEN="eyJhbGciOiJub25lIn0.eyJzdWIiOiJhZG1pbkBkZXZmb2xpby5jb20iLCJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOjF9."
+RESP=$(curl -sk -o /dev/null -w "%{http_code}" "$BASE/api/admin/users" \
+    -H "Authorization: Bearer $FAKE_TOKEN")
+check "JWT alg:none (401)" "$RESP" "401"
+
+# 3. Admin sans token
+RESP=$(curl -sk -o /dev/null -w "%{http_code}" "$BASE/api/admin/users")
+check "Admin sans token (401)" "$RESP" "401"
+
+# 4. Actuator env
+RESP=$(curl -sk -o /dev/null -w "%{http_code}" "$BASE/actuator/env")
+check "Actuator env (401/403)" "$RESP" "40[13]"
+
+# 5. Actuator health (public)
+RESP=$(curl -sk -o /dev/null -w "%{http_code}" "$BASE/actuator/health")
+check "Actuator health (200)" "$RESP" "200"
+
+# 6. SSRF avatar (route authentifiée, nécessite le token)
+RESP=$(curl -sk -o /dev/null -w "%{http_code}" -X POST "$BASE/api/users/avatar" \
+    -H "Authorization: Bearer $TOKEN" \
+    -d "url=http://169.254.169.254/")
+check "SSRF avatar (400)" "$RESP" "400"
+
+# 7. HTTPS actif
+RESP=$(curl -sk -o /dev/null -w "%{http_code}" "$BASE/")
+check "HTTPS actif (200)" "$RESP" "200"
+
+# 8. Redirection HTTP vers HTTPS
+RESP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/)
+check "HTTP vers HTTPS (301)" "$RESP" "301"
+
+# 9. Conteneur backend non root
+USER=$(docker exec backend whoami 2>/dev/null || echo "N/A")
+check "Conteneur backend (appuser)" "$USER" "appuser"
+
+# 10. MariaDB non exposé (le port 3306 ne doit pas répondre depuis l'extérieur)
+if nc -z localhost 3306 2>/dev/null; then
+    echo "  ❌ MariaDB exposé (port 3306 accessible)"
+    FAIL=$((FAIL + 1))
+else
+    echo "  ✅ MariaDB non exposé (port 3306 inaccessible)"
+    PASS=$((PASS + 1))
+fi
+
+echo ""
+echo "=== Résultat : $PASS passé(s), $FAIL échoué(s) ==="
+exit $FAIL
+```
+
+### Utilisation
+
+```bash
+chmod +x verify_security.sh
+./verify_security.sh https://localhost
+```
+
+> **Note** : ce script utilise `curl -k` (insecure) car le certificat HTTPS est auto signé en développement. En production avec un certificat valide, retirer l'option `-k`.
+
+### Intégration CI/CD
+
+Pour une intégration dans un pipeline CI/CD (GitHub Actions, GitLab CI), le script peut être appelé après le déploiement :
+
+```yaml
+# Exemple GitHub Actions
+security_verify:
+  stage: verify
+  script:
+    - chmod +x verify_security.sh
+    - ./verify_security.sh https://staging.devfolio.local
+  allow_failure: false
+```
+
+---
+
+## 8. Notes détaillées sur deux vulnérabilités corrigées
 
 ### Note A : VULN-04 JWT alg:none (A07-01)
 

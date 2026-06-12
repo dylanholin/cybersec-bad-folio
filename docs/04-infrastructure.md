@@ -264,6 +264,72 @@ Le fichier `.env` contient des secrets réels (mot de passe Gmail, clés AWS) ma
 
 ---
 
+## Configuration pare feu
+
+### Principe
+
+En production, seul le reverse proxy nginx doit être accessible depuis l'extérieur. Tous les autres services sont accessibles uniquement via le réseau Docker interne.
+
+### Règles recommandées (iptables / nftables)
+
+```bash
+# Politique par défaut : tout refuser
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
+# Autoriser les connexions déjà établies
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Autoriser loopback
+iptables -A INPUT -i lo -j ACCEPT
+
+# Autoriser SSH (port 22) pour l'administration
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# Autoriser HTTP (80) et HTTPS (443) uniquement
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+
+# Interdire explicitement les ports internes
+iptables -A INPUT -p tcp --dport 3306 -j DROP   # MariaDB
+iptables -A INPUT -p tcp --dport 8080 -j DROP   # Backend Spring Boot
+iptables -A INPUT -p tcp --dport 5005 -j DROP   # Debug JVM (si présent)
+```
+
+### Règles équivalentes nftables
+
+```bash
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+        ct state established,related accept
+        iif lo accept
+        tcp dport { 22, 80, 443 } accept
+        tcp dport { 3306, 8080, 5005 } drop
+    }
+}
+```
+
+### Ports exposés après durcissement
+
+| Port | Service | Exposition | Pare feu |
+|------|---------|------------|----------|
+| 80 | HTTP → redirection HTTPS | Public | ACCEPT |
+| 443 | HTTPS | Public | ACCEPT |
+| 22 | SSH | Admin uniquement | ACCEPT |
+| 3306 | MariaDB | Aucun accès extérieur | DROP |
+| 8080 | Backend | Via nginx reverse proxy uniquement | DROP |
+| 5005 | Debug JVM | Aucun | DROP |
+
+> **Note** : Docker gère ses propres règles iptables via les chaînes `DOCKER-USER` et `FORWARD`. En production, il est recommandé d'ajouter les restrictions dans la chaîne `DOCKER-USER` pour qu'elles persistent après un redémarrage Docker :
+> ```bash
+> iptables -I DOCKER-USER -p tcp --dport 3306 -j DROP
+> iptables -I DOCKER-USER -p tcp --dport 8080 -j DROP
+> ```
+
+---
+
 ## Récapitulatif infrastructure
 
 | Réf | Problème | Impact | Correction |
