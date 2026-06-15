@@ -69,6 +69,9 @@
   - `deny incoming` par défaut
   - Ouverts : 22/tcp (SSH), 80/tcp, 443/tcp
   - Fermés : 3306, 8080, 5005
+- **Filet de sécurité `DOCKER-USER`** (iptables) :
+  - Bloque les ports 3306 et 8080 même si Docker tente de les publier
+  - `conntrack ESTABLISHED,RELATED` autorisé pour le fonctionnement de Docker
 - **Permissions** : `.env` en 600, clés SSH en 600/700
 - **Baseline** conservée pour comparaison
 
