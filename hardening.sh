@@ -110,13 +110,17 @@ fi
 # ── Étape 1 : Utilisateur dédié ───────────────────────────────────────
 if id "$DEPLOY_USER" &>/dev/null; then
     info "L'utilisateur '$DEPLOY_USER' existe déjà."
+    if ! id -nG "$DEPLOY_USER" 2>/dev/null | grep -qw "docker"; then
+        info "Ajout de '$DEPLOY_USER' au groupe docker..."
+        usermod -aG docker "$DEPLOY_USER"
+    fi
 else
     info "Création de l'utilisateur '$DEPLOY_USER'..."
     adduser --disabled-password --gecos "" "$DEPLOY_USER" 2>/dev/null || useradd -m -s /bin/bash "$DEPLOY_USER"
     info "Ajout au groupe docker..."
     usermod -aG docker "$DEPLOY_USER"
-    warn "Pensez à définir un mot de passe ou à déposer une clé SSH pour '$DEPLOY_USER'."
 fi
+warn "Pensez à définir un mot de passe ou à déposer une clé SSH pour '$DEPLOY_USER'."
 
 # ── Étape 1 : Répertoires ─────────────────────────────────────────────
 info "Création des répertoires $APP_DIR et $LOG_DIR..."
