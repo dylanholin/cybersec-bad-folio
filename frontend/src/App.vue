@@ -17,66 +17,63 @@ function userInitial(email) {
 </script>
 
 <template>
-  <nav class="navbar navbar-expand-lg sticky-top">
+  <nav class="navbar sticky-top">
     <div class="container">
       <router-link class="navbar-brand d-flex align-items-center gap-2" to="/">
         <Briefcase :size="20" stroke-width="2.5" />
         DevFolio
       </router-link>
 
-      <button class="navbar-toggler" type="button"
-              data-bs-toggle="collapse" data-bs-target="#navbarNav"
-              aria-controls="navbarNav" aria-expanded="false"
-              aria-label="Menu de navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <div class="navbar-nav ms-auto align-items-lg-center">
+      <ul class="navbar-nav ms-auto flex-row align-items-center">
           <template v-if="auth.token">
-            <router-link class="nav-link" to="/">
-              <Home :size="16" /> Accueil
-            </router-link>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/">
+                <Home :size="16" /> Accueil
+              </router-link>
+            </li>
 
-            <div class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#"
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#"
                  id="userDropdown" role="button" data-bs-toggle="dropdown"
                  aria-expanded="false">
-                <div class="user-avatar-mini">{{ userInitial(auth.user?.email) }}</div>
-                <span class="d-none d-lg-inline">{{ auth.user?.email }}</span>
-                <ChevronDown :size="14" />
+                <span class="user-avatar-mini">{{ userInitial(auth.user?.email) }}</span>
+                <span class="d-none d-lg-inline ms-2">{{ auth.user?.email }}</span>
+                <ChevronDown :size="14" class="ms-1" />
               </a>
-              <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="userDropdown">
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                 <li>
-                  <router-link class="dropdown-item d-flex align-items-center gap-2" :to="`/profile/${auth.user?.id}`">
+                  <router-link class="dropdown-item" :to="`/profile/${auth.user?.id}`">
                     <User :size="14" /> Mon Profil
                   </router-link>
                 </li>
                 <li v-if="auth.user?.role === 'ADMIN'">
-                  <router-link class="dropdown-item d-flex align-items-center gap-2" to="/admin">
+                  <router-link class="dropdown-item" to="/admin">
                     <Shield :size="14" /> Administration
                   </router-link>
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                  <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" @click.prevent="logout">
+                  <a class="dropdown-item text-danger" href="#" @click.prevent="logout">
                     <LogOut :size="14" /> Déconnexion
                   </a>
                 </li>
               </ul>
-            </div>
+            </li>
           </template>
 
           <template v-else>
-            <router-link class="nav-link" to="/login">
-              <LogIn :size="16" /> Connexion
-            </router-link>
-            <router-link class="nav-link nav-link-cta" to="/register">
-              <UserPlus :size="16" /> Inscription
-            </router-link>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/login">
+                <LogIn :size="16" /> Connexion
+              </router-link>
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link nav-link-cta" to="/register">
+                <UserPlus :size="16" /> Inscription
+              </router-link>
+            </li>
           </template>
-        </div>
-      </div>
+        </ul>
     </div>
   </nav>
 
@@ -89,8 +86,8 @@ function userInitial(email) {
   </main>
 
   <footer class="footer">
-    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
-      <span>DevFolio — Portfolio étudiant sécurisé</span>
+    <div class="container">
+      <span>DevFolio&nbsp;&nbsp;Portfolio étudiant sécurisé</span>
       <span>Projet pédagogique OWASP Top 10 2025</span>
     </div>
   </footer>
