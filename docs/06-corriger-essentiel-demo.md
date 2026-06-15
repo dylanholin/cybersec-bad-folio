@@ -144,16 +144,18 @@ La chaîne JWT (filtre + service + SecurityConfig) est le **prérequis** de tout
 
 ## 3. Vulnérabilités restantes
 
-| Réf | Problème | Criticité | Détail | Action recommandée |
-|-----|----------|-----------|--------|-------------------|
-| A07-05b | `TokenBlacklistService` utilise `hashCode()` au lieu de SHA-256 | BASSE | Le commentaire du code indique "SHA-256" mais `hashToken()` utilise `Integer.toHexString(token.hashCode())`. Collisions possibles entre tokens différents. | Remplacer par `MessageDigest.getInstance("SHA-256")` en production |
-|   | Port backend 8080 exposé sur `0.0.0.0` | BASSE | Le backend est accessible directement sans passer par nginx reverse proxy. | Restreindre à `127.0.0.1:8080` ou supprimer le mapping de port |
-|   | Frontend nginx tourne en root | BASSE | L'image `nginx:alpine` officielle tourne en root par défaut. | Ajouter `USER nginx` dans le Dockerfile |
+> **Mise à jour itération 3** : les trois risques de criticité BASSE ont été corrigés (cf. [07-durcissement-serveur.md](07-durcissement-serveur.md) et [08-deploiement-verification.md](08-deploiement-verification.md)). Seuls restent les risques informationnels, non bloquants pour une démo temporaire.
+
+| Réf | Problème | Criticité | Détail | Statut |
+|-----|----------|-----------|--------|--------|
+| A07-05b | `TokenBlacklistService` utilise `hashCode()` au lieu de SHA-256 | ~~BASSE~~ | ~~Collisions possibles entre tokens différents~~ | **Corrigé** : `hashToken()` utilise désormais `MessageDigest.getInstance("SHA-256")` |
+|   | Port backend 8080 exposé sur `0.0.0.0` | ~~BASSE~~ | ~~Backend accessible sans passer par nginx~~ | **Corrigé** : bindé sur `127.0.0.1:8080` dans `docker-compose.yml` |
+|   | Frontend nginx tourne en root | ~~BASSE~~ | ~~Image `nginx:alpine` root par défaut~~ | **Corrigé** : `USER nginx` + `chown` des certificats SSL dans le Dockerfile |
 |   | Certificat HTTPS auto-signé | INFO | Généré dans le Dockerfile frontend. Le navigateur affiche un avertissement. | Utiliser Let's Encrypt en production |
 |   | Rate limiting en mémoire | INFO | `RateLimitService` ne fonctionne pas en cluster (non distribué). | Utiliser Redis ou Bucket4j en production |
 |   | Token blacklist en mémoire | INFO | `TokenBlacklistService` ne fonctionne pas en cluster. | Utiliser Redis avec TTL en production |
 
-> **Évaluation** : les vulnérabilités restantes sont de criticité **basse** ou **informationnelle**. Elles ne représentent pas un risque bloquant pour une démonstration temporaire. Elles devront être traitées avant un déploiement en production.
+> **Évaluation** : les seules vulnérabilités restantes sont de criticité **informationnelle** (non distribuabilité en cluster, certificat auto-signé). Elles ne représentent pas un risque bloquant pour une démonstration temporaire. Elles devront être traitées avant un déploiement en production.
 
 ---
 

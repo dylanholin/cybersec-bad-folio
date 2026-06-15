@@ -22,4 +22,7 @@ RUN mkdir -p /etc/nginx/ssl && \
 
 EXPOSE 80 443
 
+RUN chown -R nginx:nginx /etc/nginx/ssl
+USER nginx
+
 CMD ["nginx", "-g", "daemon off;"]

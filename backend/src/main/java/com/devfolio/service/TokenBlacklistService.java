@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -68,10 +70,21 @@ public class TokenBlacklistService {
     }
 
     /**
-     * Hash le token pour ne pas stocker le token brut en mémoire.
-     * SHA-256 est suffisant ici (pas de besoin de sel, on compare juste).
+     * Hash le token en SHA-256 pour ne pas stocker le token brut en mémoire.
+     * SHA-256 évite les collisions possibles avec hashCode().
      */
     private String hashToken(final String token) {
-        return Integer.toHexString(token.hashCode());
+        try {
+            final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            final byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+            final StringBuilder hex = new StringBuilder(2 * hash.length);
+            for (final byte b : hash) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (final java.security.NoSuchAlgorithmException e) {
+            // SHA-256 est garanti disponible sur toute JVM
+            throw new IllegalStateException("SHA-256 non disponible", e);
+        }
     }
 }
