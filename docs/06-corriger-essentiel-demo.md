@@ -91,7 +91,7 @@ La chaîne JWT (filtre + service + SecurityConfig) est le **prérequis** de tout
 | 33 | DEBUG en production | A05-06 | Niveau `WARN`/`INFO`, suppression de `DEBUG=true` dans docker-compose | `application.properties`, `docker-compose.yml` |
 | 34 | Pas de rotation des logs | A09-04 | `rollingpolicy.max-file-size=10MB`, `max-history=7` | `application.properties` |
 | 35 | ddl-auto=update | DEV-12 | `ddl-auto=validate` | `application.properties` |
-| 36 | Admin MDP trivial | A07-04 | Mot de passe fort `DevfolioAdmin2024!` + hash BCrypt | `init.sql` |
+| 36 | Admin MDP trivial | A07-04 | Mot de passe fort (≥ 12 car.) + hash BCrypt | `init.sql` |
 | 37 | Axios vulnérable (CVE-2021-3749) | A06-02 | Mise à jour vers `axios: ^1.7.0` | `frontend/package.json` |
 
 ### 1.4 Corrections d'infrastructure (toutes corrigées)
@@ -150,7 +150,7 @@ La chaîne JWT (filtre + service + SecurityConfig) est le **prérequis** de tout
 |-----|----------|-----------|--------|--------|
 | A07-05b | `TokenBlacklistService` utilise `hashCode()` au lieu de SHA-256 | ~~BASSE~~ | ~~Collisions possibles entre tokens différents~~ | **Corrigé** : `hashToken()` utilise désormais `MessageDigest.getInstance("SHA-256")` |
 |   | Port backend 8080 exposé sur `0.0.0.0` | ~~BASSE~~ | ~~Backend accessible sans passer par nginx~~ | **Corrigé** : bindé sur `127.0.0.1:8080` dans `docker-compose.yml` |
-|   | Frontend nginx tourne en root | ~~BASSE~~ | ~~Image `nginx:alpine` root par défaut~~ | **Corrigé** : `USER nginx` + `chown` des certificats SSL dans le Dockerfile |
+|   | Frontend nginx tourne en root | ~~BASSE~~ | ~~Image `nginx:alpine` root par défaut~~ | **Corrigé** : `USER nginx` + installation `openssl` (`apk add --no-cache openssl`) + préparation des répertoires cache/log (`mkdir` + `chown -R nginx:nginx /var/cache/nginx /var/log/nginx /run`) avant le switch d'utilisateur |
 |   | Certificat HTTPS auto-signé | INFO | Généré dans le Dockerfile frontend. Le navigateur affiche un avertissement. | Utiliser Let's Encrypt en production |
 |   | Rate limiting en mémoire | INFO | `RateLimitService` ne fonctionne pas en cluster (non distribué). | Utiliser Redis ou Bucket4j en production |
 |   | Token blacklist en mémoire | INFO | `TokenBlacklistService` ne fonctionne pas en cluster. | Utiliser Redis avec TTL en production |
@@ -332,7 +332,7 @@ echo ""
 echo "  Connexion admin..."
 LOGIN_RESP=$(curl -sk -X POST "$BASE/api/auth/login" \
     -H "Content-Type: application/json" \
-    -d '{"email":"admin@devfolio.com","password":"DevfolioAdmin2024!"}')
+    -d '{"email":"admin@devfolio.com","password":"<ADMIN_PASSWORD>"}')
 TOKEN=$(echo "$LOGIN_RESP" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 if [ -z "$TOKEN" ]; then
     echo "  ❌ Impossible de se connecter (vérifier les credentials)"

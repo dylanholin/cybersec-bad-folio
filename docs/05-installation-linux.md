@@ -48,7 +48,7 @@ Réponses recommandées :
 
 ```bash
 sudo mariadb -e "CREATE DATABASE IF NOT EXISTS devfolio;"
-sudo mariadb -e "CREATE USER 'devfolio_app'@'localhost' IDENTIFIED BY 'DevfolioApp2024!';"
+sudo mariadb -e "CREATE USER 'devfolio_app'@'localhost' IDENTIFIED BY '<mot_de_passe_fort>';"
 sudo mariadb -e "GRANT SELECT, INSERT, UPDATE, DELETE ON devfolio.* TO 'devfolio_app'@'localhost';"
 sudo mariadb -e "FLUSH PRIVILEGES;"
 ```
@@ -56,7 +56,7 @@ sudo mariadb -e "FLUSH PRIVILEGES;"
 > **Attention** : le caractère `!` dans le mot de passe peut être interprété par bash (history expansion). Pour éviter cela, utiliser des guillemets simples ou échapper le `!` :
 > ```bash
 > # Méthode 1 : guillemets simples
-> sudo mariadb -e "CREATE USER 'devfolio_app'@'localhost' IDENTIFIED BY 'DevfolioApp2024!';"
+> sudo mariadb -e "CREATE USER 'devfolio_app'@'localhost' IDENTIFIED BY '<mot_de_passe_fort>';"
 >
 > # Méthode 2 : désactiver l'history expansion dans la session
 > set +H
@@ -83,13 +83,13 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=devfolio
 DB_USER=devfolio_app
-DB_PASSWORD=DevfolioApp2024!
+DB_PASSWORD=<mot_de_passe_fort>
 
 JWT_SECRET=<générer avec : openssl rand -base64 48>
 JWT_EXPIRATION=3600000
 
 ADMIN_EMAIL=admin@devfolio.com
-ADMIN_PASSWORD=DevfolioAdmin2024!
+ADMIN_PASSWORD=<mot_de_passe_admin_fort>
 ```
 
 Charger les variables dans le shell (obligatoire avant chaque lancement du backend) :
@@ -104,10 +104,10 @@ Ou exporter manuellement :
 ```bash
 set +H
 export DB_HOST=localhost DB_PORT=3306 DB_NAME=devfolio
-export DB_USER=devfolio_app DB_PASSWORD='DevfolioApp2024!'
+export DB_USER=devfolio_app DB_PASSWORD='<mot_de_passe_fort>'
 export JWT_SECRET='votre-secret-généré-avec-openssl'
 export JWT_EXPIRATION=3600000
-export ADMIN_EMAIL=admin@devfolio.com ADMIN_PASSWORD='DevfolioAdmin2024!'
+export ADMIN_EMAIL=admin@devfolio.com ADMIN_PASSWORD='<mot_de_passe_admin_fort>'
 ```
 
 > **Important** : les variables d'environnement ne persistent pas entre les sessions. Il faut les recharger à chaque ouverture de terminal.
@@ -149,7 +149,7 @@ Ouvrir le navigateur sur : **http://localhost:5173**
 | Test | Commande / URL | Résultat attendu |
 |------|---------------|-------------------|
 | Backend actif | `curl http://localhost:8080/api/projects` | Liste JSON des projets publics |
-| Login | `curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d '{"email":"admin@devfolio.com","password":"DevfolioAdmin2024!"}'` | Token JWT dans la réponse |
+| Login | `curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d '{"email":"admin@devfolio.com","password":"<ADMIN_PASSWORD>"}'` | Token JWT dans la réponse |
 | Rate limiting | Envoyer 5+ requêtes de login échouées en moins d'une minute | 429 Too Many Requests |
 | Logout | `curl -X POST http://localhost:8080/api/auth/logout -H "Authorization: Bearer <token>"` | `{"message":"Déconnexion réussie"}` (token blacklisté) |
 | Route protégée | `curl http://localhost:8080/api/admin/users` | 401 Unauthorized |
@@ -200,10 +200,10 @@ Ou exporter manuellement :
 ```bash
 set +H
 export DB_HOST=localhost DB_PORT=3306 DB_NAME=devfolio
-export DB_USER=devfolio_app DB_PASSWORD='DevfolioApp2024!'
+export DB_USER=devfolio_app DB_PASSWORD='<mot_de_passe_fort>'
 export JWT_SECRET='votre-secret-généré'
 export JWT_EXPIRATION=3600000
-export ADMIN_EMAIL=admin@devfolio.com ADMIN_PASSWORD='DevfolioAdmin2024!'
+export ADMIN_EMAIL=admin@devfolio.com ADMIN_PASSWORD='<mot_de_passe_admin_fort>'
 ```
 
 ### 403 sur POST `/api/auth/login`
@@ -220,8 +220,8 @@ Le script `init.sql` a été chargé plusieurs fois, créant des doublons. Netto
 
 ```bash
 set +H
-mariadb -u devfolio_app -p'DevfolioApp2024!' -e "DELETE FROM devfolio.users WHERE id > 3;"
-mariadb -u devfolio_app -p'DevfolioApp2024!' -e "SELECT id, email, role FROM devfolio.users;"
+mariadb -u devfolio_app -p'<mot_de_passe_fort>' -e "DELETE FROM devfolio.users WHERE id > 3;"
+mariadb -u devfolio_app -p'<mot_de_passe_fort>' -e "SELECT id, email, role FROM devfolio.users;"
 ```
 
 ### `npm install` échoue
