@@ -202,6 +202,18 @@ sudo ufw status numbered
 | 5005 | Debug JVM | **Fermé** — supprimé du Dockerfile (cf. doc 06) |
 
 > **Piège Docker / UFW :** Docker manipule directement `iptables` et **contourne** les règles UFW pour les ports qu'il publie (`ports:` dans `docker-compose.yml`). Conséquence : un port publié par Docker peut rester accessible **malgré** une règle `ufw deny`. La parade est de **ne pas publier** les ports internes (3306, 8080) sur l'hôte, ou de les binder sur `127.0.0.1` (cf. [04-infrastructure.md](04-infrastructure.md), chaîne `DOCKER-USER`). Ce point est repris au moment du déploiement (doc 08).
+>
+> **Filet de sécurité `DOCKER-USER`** : même avec le bind `127.0.0.1`, ajouter des règles DROP dans la chaîne `DOCKER-USER` empêche toute exposition accidentelle si quelqu'un modifie `docker-compose.yml` :
+>
+> ```bash
+> # Autoriser les connexions déjà établies (requis par Docker)
+> sudo iptables -I DOCKER-USER 1 -j RETURN -m conntrack --ctstate ESTABLISHED,RELATED
+> # Bloquer les ports internes même si Docker tente de les publier
+> sudo iptables -I DOCKER-USER -p tcp --dport 3306 -j DROP
+> sudo iptables -I DOCKER-USER -p tcp --dport 8080 -j DROP
+> ```
+>
+> ⚠️ Ces règles ne persistent pas après un redémarrage de Docker. Pour les rendre persistantes, les ajouter dans un script au démarrage ou dans `hardening.sh`.
 
 Ressources : [Documentation UFW](https://wiki.ubuntu.com/UncomplicatedFirewall) · [Guide DigitalOcean UFW](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-with-ufw-on-ubuntu)
 
