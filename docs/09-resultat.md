@@ -132,6 +132,7 @@ Internet → [UFW: 80/443] → nginx (frontend, USER nginx)
 | Token blacklist en mémoire | INFO | Redis avec TTL en production |
 | Pas de supervision ni sauvegarde | INFO | Netdata/Prometheus + `mysqldump` périodique |
 | Pas de bannissement brute force | BASSE | `fail2ban` sur SSH |
+| `esbuild` ≤ 0.28.0 (via Vite 5) | INFO | Vulnérabilité **dev uniquement** (serveur de dev local) — pas d'impact en production (build conteneurisé). Mise à jour vers Vite 8 en cas de changement majeur. |
 
 > Ces risques ne sont pas bloquants pour une démonstration pédagogique temporaire.
 
