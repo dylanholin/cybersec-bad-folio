@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
-import { UserPlus, Mail, Lock } from '@lucide/vue'
+import { UserPlus } from '@lucide/vue'
 
 const email = ref('')
 const password = ref('')
@@ -55,23 +55,17 @@ async function register() {
           <form @submit.prevent="register" novalidate>
             <div class="mb-3">
               <label for="register-email" class="form-label">Email</label>
-              <div class="input-group">
-                <span class="input-group-text"><Mail :size="16" /></span>
-                <input id="register-email" v-model="email" type="email"
-                       class="form-control" required
-                       :aria-describedby="error ? 'register-error' : undefined"
-                       placeholder="nom@exemple.com">
-              </div>
+              <input id="register-email" v-model="email" type="email"
+                     class="form-control" required
+                     :aria-describedby="error ? 'register-error' : undefined"
+                     placeholder="nom@exemple.com">
             </div>
-            <div class="mb-3">
+            <div class="mb-4">
               <label for="register-password" class="form-label">Mot de passe</label>
-              <div class="input-group">
-                <span class="input-group-text"><Lock :size="16" /></span>
-                <input id="register-password" v-model="password" type="password"
-                       class="form-control" minlength="12" required
-                       :aria-describedby="password ? 'password-help' : (error ? 'register-error' : undefined)"
-                       placeholder="Minimum 12 caractères">
-              </div>
+              <input id="register-password" v-model="password" type="password"
+                     class="form-control" minlength="12" required
+                     :aria-describedby="password ? 'password-help' : (error ? 'register-error' : undefined)"
+                     placeholder="Minimum 12 caractères">
               <div v-if="password" class="mt-2">
                 <div class="progress" style="height: 6px" role="progressbar"
                      :aria-valuenow="passwordStrength.level" aria-valuemin="0" aria-valuemax="3">

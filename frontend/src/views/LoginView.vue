@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
-import { LogIn, Mail, Lock } from '@lucide/vue'
+import { LogIn } from '@lucide/vue'
 
 const email = ref('')
 const password = ref('')
@@ -40,23 +40,17 @@ async function login() {
           <form @submit.prevent="login" novalidate>
             <div class="mb-3">
               <label for="login-email" class="form-label">Email</label>
-              <div class="input-group">
-                <span class="input-group-text"><Mail :size="16" /></span>
-                <input id="login-email" v-model="email" type="email"
-                       class="form-control" required
-                       :aria-describedby="error ? 'login-error' : undefined"
-                       placeholder="nom@exemple.com">
-              </div>
+              <input id="login-email" v-model="email" type="email"
+                     class="form-control" required
+                     :aria-describedby="error ? 'login-error' : undefined"
+                     placeholder="nom@exemple.com">
             </div>
-            <div class="mb-3">
+            <div class="mb-4">
               <label for="login-password" class="form-label">Mot de passe</label>
-              <div class="input-group">
-                <span class="input-group-text"><Lock :size="16" /></span>
-                <input id="login-password" v-model="password" type="password"
-                       class="form-control" required
-                       :aria-describedby="error ? 'login-error' : undefined"
-                       placeholder="Votre mot de passe">
-              </div>
+              <input id="login-password" v-model="password" type="password"
+                     class="form-control" required
+                     :aria-describedby="error ? 'login-error' : undefined"
+                     placeholder="Votre mot de passe">
             </div>
             <button type="submit" class="btn btn-primary w-100">
               Se connecter
