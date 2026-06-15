@@ -26,37 +26,17 @@ cd /opt/devfolio
 
 ### 3.2 Préparer les fichiers de configuration et les secrets
 
-Le `.env` n'est **pas** dans le dépôt (`.gitignore`). Il est créé à partir du template et rempli avec des secrets forts, propres au serveur.
+Le `.env` n'est **pas** dans le dépôt (`.gitignore`). Le script `deploy.sh` le crée automatiquement à partir du template et génère les secrets (`JWT_SECRET`, `DB_PASSWORD`, `ADMIN_PASSWORD`) avec `openssl rand`.
+
+Si vous préparez le `.env` manuellement :
 
 ```bash
 cp .env.example .env
 chmod 600 .env          # lecture par le seul propriétaire
-```
 
-Générer des secrets forts :
-
-```bash
-# Secret JWT : >= 48 caractères base64 (sinon hmacShaKeyFor échoue)
-openssl rand -base64 48
-
-# Mots de passe BDD / admin : robustes et différents
-openssl rand -base64 24
-```
-
-Contenu attendu de `.env` (valeurs à remplacer) :
-
-```env
-DB_HOST=mariadb
-DB_PORT=3306
-DB_NAME=devfolio
-DB_USER=devfolio_app
-DB_PASSWORD=<mot_de_passe_fort>
-
-JWT_SECRET=<openssl rand -base64 48>
-JWT_EXPIRATION=3600000
-
-ADMIN_EMAIL=admin@devfolio.com
-ADMIN_PASSWORD=<mot_de_passe_admin_fort>
+# Générer les secrets (JWT ≥ 48 car., mots de passe ≥ 24 car.)
+openssl rand -base64 48   # → JWT_SECRET
+openssl rand -base64 24   # → DB_PASSWORD, ADMIN_PASSWORD
 ```
 
 > **Cohérence Docker :** en déploiement conteneurisé, `DB_HOST` vaut le **nom du service** Docker (`mariadb`), pas `localhost`. La résolution se fait via le réseau Docker interne `backend-db`.
@@ -80,6 +60,8 @@ ADMIN_PASSWORD=<mot_de_passe_admin_fort>
 | `.env` non chargé | `Could not resolve placeholder 'JWT_SECRET'` | `env_file: .env` présent pour le service `backend` |
 | `DB_HOST=localhost` en conteneur | Backend ne joint pas la BDD | Utiliser `DB_HOST=mariadb` |
 | Conflit de port 80/443 | `bind: address already in use` | `ss -tulpn` pour repérer un service occupant le port |
+| `nginx:alpine` sans `openssl` | Build échoue : `openssl: not found` | Ajouter `RUN apk add --no-cache openssl` dans le Dockerfile frontend |
+| `USER nginx` sans permissions | Frontend crash : `mkdir() /var/cache/nginx/client_temp failed` | Préparer les répertoires `RUN mkdir -p /var/cache/nginx/client_temp /var/log/nginx /run && chown -R nginx:nginx ...` avant `USER nginx` |
 | init.sql rejoué | Doublons en base | Volume nommé persistant ; ne pas réinitialiser à chaque `up` |
 | Permissions volume | MariaDB ne démarre pas | Laisser Docker gérer le volume nommé `db_data` |
 

@@ -112,6 +112,8 @@ sudo usermod -aG sudo deploy          # Debian/Ubuntu (ou 'wheel' sur RHEL)
 ```
 
 > **Avertissement de sécurité :** appartenir au groupe `docker` équivaut quasiment à un accès root (on peut monter `/` dans un conteneur). C'est un compromis accepté pour l'exploitation Docker, mais il faut limiter le nombre de membres de ce groupe et protéger l'accès SSH de ce compte.
+>
+> **Piège rencontré en production :** si `deploy` est créé manuellement **avant** le script de durcissement, le groupe `docker` peut être oublié. Vérifier avec `id deploy` et compléter avec `usermod -aG docker deploy` si besoin. De même, si `AllowUsers deploy` est appliqué en SSH, s'assurer qu'une **clé SSH est déposée** pour ce compte (`/home/deploy/.ssh/authorized_keys`) avant de redémarrer SSH, sinon l'accès distant est perdu.
 
 ### 1.5 Préparer répertoires et logs
 
@@ -302,9 +304,11 @@ Ressources : [Docker security](https://docs.docker.com/engine/security/) · [OWA
 
 - [ ] Accès SSH par clé fonctionnel (mot de passe désactivé)
 - [ ] `PermitRootLogin no` et `AllowUsers deploy` appliqués + nouvelle connexion testée
+- [ ] **Session de secours ouverte** avant tout redémarrage SSH
 - [ ] Système à jour
 - [ ] Docker + Compose installés, version vérifiée
-- [ ] Utilisateur `deploy` créé (groupe `docker`, sudo si besoin)
+- [ ] Utilisateur `deploy` créé (**vérifier groupe `docker`** avec `id deploy`)
+- [ ] **Clé SSH déposée** pour `deploy` (`/home/deploy/.ssh/authorized_keys`) avant durcissement SSH
 - [ ] Répertoires `/opt/devfolio` et `/var/log/devfolio` créés avec bonnes permissions
 - [ ] UFW actif : entrant refusé par défaut, 22/80/443 ouverts uniquement
 - [ ] Services réseau inutiles désactivés
