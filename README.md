@@ -67,3 +67,4 @@ Un script de vérification automatisée pour un déploiement Docker complet (HTT
 - [Corriger l'essentiel avant la démo](docs/06-corriger-essentiel-demo.md)
 - [Durcir et préparer le serveur de démonstration](docs/07-durcissement-serveur.md)
 - [Déployer l'application et vérifier l'exposition réseau](docs/08-deploiement-verification.md)
+- [Résultat final du projet](docs/09-resultat.md)
