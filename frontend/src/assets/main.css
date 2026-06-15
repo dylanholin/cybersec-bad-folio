@@ -130,12 +130,29 @@ a:hover {
 
 /* CTA inscription navbar */
 .nav-link-cta {
+  border: 1px solid var(--df-primary);
+  color: var(--df-primary) !important;
+}
+.nav-link-cta:hover {
   background-color: var(--df-primary);
   color: #fff !important;
 }
-.nav-link-cta:hover {
-  background-color: var(--df-primary-hover);
-  color: #fff !important;
+
+/* Enlever les puces de la navbar */
+.navbar-nav {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 0;
+}
+.navbar-nav .nav-item {
+  display: inline-flex;
+  align-items: center;
+}
+.navbar-nav .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  white-space: nowrap;
 }
 
 /* Dropdown */
@@ -151,6 +168,9 @@ a:hover {
   border-radius: var(--df-radius);
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .dropdown-item:hover {
   background-color: var(--df-surface-hover);
@@ -188,7 +208,7 @@ a:hover {
   background-color: var(--df-surface);
   border-color: var(--df-primary);
   color: var(--df-text);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 .form-control::placeholder {
   color: var(--df-text-tertiary);
@@ -201,27 +221,27 @@ a:hover {
 }
 
 label.form-label {
+  display: block;
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--df-text-secondary);
-  margin-bottom: 0.375rem;
+  margin-bottom: 0.5rem;
 }
 
-/* ── Search Box ────────────────────────────────────────────────────── */
+/* Espacement formulaires */
+form .mb-3 {
+  margin-bottom: 1.25rem !important;
+}
+form .mb-4 {
+  margin-bottom: 1.5rem !important;
+}
+
+/* Search Box */
 .search-box {
   background-color: var(--df-surface);
   border: 1px solid var(--df-border);
   border-radius: var(--df-radius-lg);
-  padding: 1rem;
-}
-.search-box .form-control {
-  border-right: none;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-.search-box .btn {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+  padding: 1.25rem;
 }
 
 /* ── Hero ──────────────────────────────────────────────────────────── */
@@ -263,9 +283,16 @@ label.form-label {
   background-color: var(--df-surface);
   border-top: 1px solid var(--df-border);
   color: var(--df-text-tertiary);
-  padding: 1.5rem 0;
+  padding: 2rem 0;
   margin-top: auto;
   font-size: 0.8125rem;
+}
+.footer .container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 /* ── Spinner ───────────────────────────────────────────────────────── */
@@ -285,7 +312,7 @@ label.form-label {
 /* ── Focus ──────────────────────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--df-primary);
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
 
 /* ── Transitions ───────────────────────────────────────────────────── */

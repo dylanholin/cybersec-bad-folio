@@ -44,11 +44,11 @@ async function search() {
     <div class="row justify-content-center">
       <div class="col-lg-8">
         <div class="search-box">
-          <div class="input-group">
+          <div class="d-flex gap-3 align-items-stretch">
             <input v-model="searchQuery" type="text" class="form-control"
                    placeholder="Rechercher un projet..." @keyup.enter="search"
                    aria-label="Rechercher un projet">
-            <button class="btn btn-primary d-flex align-items-center gap-1" @click="search">
+            <button class="btn btn-primary flex-shrink-0" @click="search">
               <Search :size="16" /> Rechercher
             </button>
           </div>
