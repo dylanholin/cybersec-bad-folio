@@ -19,3 +19,6 @@ node_modules/
 *.pem
 *.key
 secrets/
+
+# Consignes internes (non versionnées)
+docs/CONTEXT.md
