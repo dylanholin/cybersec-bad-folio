@@ -9,6 +9,7 @@ COPY . .
 RUN npm run build
 
 FROM nginx:alpine
+RUN apk add --no-cache openssl
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
@@ -22,7 +23,9 @@ RUN mkdir -p /etc/nginx/ssl && \
 
 EXPOSE 80 443
 
-RUN chown -R nginx:nginx /etc/nginx/ssl
+# Créer les répertoires nécessaires et donner les permissions à nginx (conteneur non-root)
+RUN mkdir -p /var/cache/nginx/client_temp /var/log/nginx /run && \
+    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /run /usr/share/nginx/html /etc/nginx/ssl
 USER nginx
 
 CMD ["nginx", "-g", "daemon off;"]
