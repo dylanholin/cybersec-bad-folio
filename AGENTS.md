@@ -186,7 +186,7 @@ Aucune suite de tests automatisée n'existe (YAGNI sur ce projet pédagogique). 
   - `style(scope): ...` : mise en forme, CSS cosmétique
 - **Branche `main`** : version vulnérable originale (ne pas modifier avec des corrections)
 - **Branche `correction`** : version sécurisée (push des corrections ici)
-- **README.md** et **docs/** : synchronisés sur les deux branches
+- **README.md** : synchronisé sur les deux branches
 
 ## Fichiers sensibles
 
