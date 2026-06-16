@@ -64,9 +64,23 @@ sudo mariadb -e "FLUSH PRIVILEGES;"
 
 ### Charger les données initiales
 
+Le projet utilise un template SQL (`init-template.sql`) pour éviter de commiter des secrets en dur. Generer le fichier SQL final à partir du template avec les variables de votre `.env` :
+
 ```bash
-sudo mariadb devfolio < database/init.sql
+export DB_NAME=devfolio DB_USER=devfolio_app DB_PASSWORD="$(grep '^DB_PASSWORD=' .env | cut -d '=' -f2-)"
+awk -v db_name="${DB_NAME}" \
+    -v db_user="${DB_USER}" \
+    -v db_password="${DB_PASSWORD}" '{
+    gsub(/__DB_NAME__/, db_name);
+    gsub(/__DB_USER__/, db_user);
+    gsub(/__DB_PASSWORD__/, db_password);
+    print
+}' database/init-template.sql > database/init.sql
+sudo mariadb ${DB_NAME} < database/init.sql
+rm -f database/init.sql
 ```
+
+> **Attention** : le fichier `init.sql` genere contient le mot de passe en clair. Le supprimer immediatement apres execution. Ne jamais commiter ce fichier.
 
 ---
 
@@ -216,7 +230,7 @@ Si Spring Security bloque les POST anonymes avec un 403 vide :
 
 ### `Query did not return a unique result`
 
-Le script `init.sql` a été chargé plusieurs fois, créant des doublons. Nettoyer :
+Le script `init.sql` (genere a partir du template) a ete charge plusieurs fois, creant des doublons. Nettoyer :
 
 ```bash
 set +H

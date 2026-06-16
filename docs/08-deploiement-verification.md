@@ -62,7 +62,7 @@ openssl rand -base64 24   # → DB_PASSWORD, ADMIN_PASSWORD
 | Conflit de port 80/443 | `bind: address already in use` | `ss -tulpn` pour repérer un service occupant le port |
 | `nginx:alpine` sans `openssl` | Build échoue : `openssl: not found` | Ajouter `RUN apk add --no-cache openssl` dans le Dockerfile frontend |
 | `USER nginx` sans permissions | Frontend crash : `mkdir() /var/cache/nginx/client_temp failed` | Préparer les répertoires `RUN mkdir -p /var/cache/nginx/client_temp /var/log/nginx /run && chown -R nginx:nginx ...` avant `USER nginx` |
-| init.sql rejoué | Doublons en base | Volume nommé persistant ; ne pas réinitialiser à chaque `up` |
+| init.sh rejoué (volume db_data existant) | Doublons en base | Volume nommé persistant ; les scripts `/docker-entrypoint-initdb.d/` ne s'executent qu'au premier demarrage avec un volume vide |
 | Permissions volume | MariaDB ne démarre pas | Laisser Docker gérer le volume nommé `db_data` |
 | CORS non configuré pour l'IP publique | Login retourne 403 depuis le navigateur (OK en curl local) | Définir `CORS_ALLOWED_ORIGINS=https://<IP-publique>` dans `.env` |
 | `api.js` avec `baseURL` hardcodé | Requêtes vers `localhost:8080` (bloquées par CSP/CORS) | Vérifier `import.meta.env.PROD ? '/api' : 'http://localhost:8080/api'` |
@@ -108,7 +108,7 @@ ss -tulpn
 
 - Le conteneur tourne-t-il en root ? → backend `appuser` ; envisager `USER nginx` côté frontend (risque restant connu, cf. doc 06).
 - Tous les ports exposés sont-ils nécessaires ? → seuls 80/443 doivent être publics. 8080 ne doit pas être publié sur `0.0.0.0` (risque restant doc 06 : à binder sur `127.0.0.1` ou supprimer).
-- Les volumes montés sont-ils raisonnables ? → uniquement `db_data` (nommé) et le montage en lecture seule de `init.sql`.
+- Les volumes montés sont-ils raisonnables ? → uniquement `db_data` (nommé) et les fichiers d'init (`init.sh`, `init-template.sql`) en lecture seule dans `/docker-entrypoint-initdb.d/`.
 - Des secrets apparaissent-ils dans les variables d'environnement ? → injectés via `env_file`, jamais en dur dans le YAML.
 - Les images sont-elles récentes et minimales ? → `eclipse-temurin:21-jre-alpine`, `nginx:alpine`, `mariadb:10.11`.
 
@@ -250,8 +250,11 @@ Si possible, faire vérifier l'exposition par une autre équipe depuis une machi
 | Certificat auto-signé | INFO | Avertissement navigateur | Let's Encrypt en production |
 | Rate limiting / blacklist en mémoire | INFO | Ne fonctionne pas en cluster | Redis / Bucket4j en production |
 | Pas de supervision ni sauvegarde | INFO | Aucune alerte ni restauration | Voir bonus (supervision, backups, fail2ban) |
+| Mot de passe `devfolio_app` en dur dans `init.sql` | ~~BASSE~~ | ~~`'DevfolioApp2024!'` hardcodé dans le SQL commité~~ | **Corrigé** : `init.sql` remplacé par `init-template.sql` + `init.sh` avec injection `${DB_PASSWORD}`. Fichier genere supprime immediatement apres execution. |
+| Fallback `${DB_PASSWORD:}` (chaîne vide) | INFO | `spring.datasource.password=${DB_PASSWORD:}` possède un fallback vide | Supprimer le fallback sur un secret |
+| `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | INFO | Le mot de passe root MariaDB est identique au compte applicatif | Séparer `DB_ROOT_PASSWORD` et `DB_PASSWORD` dans `.env` |
 
-> Ces risques sont de criticité **basse** ou **informationnelle** et ne sont pas bloquants pour une démonstration temporaire. Ils sont à traiter avant un déploiement en production. Voir aussi les risques restants documentés en [doc 06 §3](06-corriger-essentiel-demo.md#3-vulnérabilités-restantes).
+> Ces risques sont de criticité **basse** ou **informationnelle** et ne sont pas bloquants pour une démonstration temporaire. Ils sont à traiter avant un déploiement en production. Voir aussi les risques restants documentés en [doc 06 §3](06-corriger-essentiel-demo.md#3-vulnérabilités-restantes) et les nouvelles vulnérabilités de code identifiées post-itération 3.
 
 ---
 

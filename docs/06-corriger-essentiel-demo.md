@@ -156,7 +156,20 @@ La chaîne JWT (filtre + service + SecurityConfig) est le **prérequis** de tout
 |   | Rate limiting en mémoire | INFO | `RateLimitService` ne fonctionne pas en cluster (non distribué). | Utiliser Redis ou Bucket4j en production |
 |   | Token blacklist en mémoire | INFO | `TokenBlacklistService` ne fonctionne pas en cluster. | Utiliser Redis avec TTL en production |
 
-> **Évaluation** : les seules vulnérabilités restantes sont de criticité **informationnelle** (non distribuabilité en cluster, certificat auto-signé). Elles ne représentent pas un risque bloquant pour une démonstration temporaire. Elles devront être traitées avant un déploiement en production.
+### Nouvelles vulnérabilités identifiées lors de la revue de code post-itération 3
+
+Ces éléments ont été découverts lors d'une revue de code complémentaire et n'étaient pas présents dans l'audit initial (Jour 1). Ils seront corrigés individuellement (un commit par vulnérabilité) sur la branche `correction`.
+
+| Réf | Problème | Criticité | Détail | Statut |
+|-----|----------|-----------|--------|--------|
+| NEW-01 | Mot de passe `devfolio_app` en dur dans `init.sql` | ~~BASSE~~ | ~~`'DevfolioApp2024!'` est hardcodé dans le script SQL commité~~ | **Corrigé** : `init.sql` remplacé par `init-template.sql` + `init.sh`. Le mot de passe applicatif est injecté via `${DB_PASSWORD}` au premier demarrage MariaDB. Le fichier genere est supprime immediatement apres execution. |
+| NEW-02 | DNS rebinding possible sur `UrlValidator` | BASSE | La résolution DNS (`InetAddress.getByName`) et la requête HTTP (`openStream`) ne sont pas atomiques. Un attaquant peut faire pointer un domaine autorisé vers une IP privée entre les deux opérations. | À corriger — valider l'IP au moment de la connexion socket |
+| NEW-03 | Mass assignment partiel sur `ProjectController.updateProject()` | BASSE | `@RequestBody Project` permet de modifier `isPublic` (visibilité) sans validation métier. Le DTO `UserUpdateRequest` existe côté `UserController` mais pas pour les projets. | À corriger — créer un DTO `ProjectUpdateRequest` avec champs contrôlés |
+| NEW-04 | Pas de validation du format email côté serveur | INFO | `AuthService.register()` ne vérifie pas que l'email est un format RFC 5322 valide. | À corriger — ajouter `@jakarta.validation.constraints.Email` ou regex |
+| NEW-05 | Fallback `${DB_PASSWORD:}` (chaîne vide) | INFO | `spring.datasource.password=${DB_PASSWORD:}` possède un fallback vide. Bien que cela provoque un échec de connexion bruyant, un fallback sur un secret est une mauvaise pratique. | À corriger — supprimer le fallback `:{}` |
+| NEW-06 | `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | INFO | Dans `docker-compose.yml`, le mot de passe root MariaDB est identique au mot de passe du compte applicatif. | À corriger — séparer `DB_ROOT_PASSWORD` et `DB_PASSWORD` dans `.env` |
+
+> **Évaluation** : en plus des risques informationnels précédents (non distribuabilité en cluster, certificat auto-signé), ces 6 nouvelles vulnérabilités ont été identifiées. Aucune n'est de criticité critique ou haute. Elles ne représentent pas un risque bloquant pour une démonstration temporaire mais devront être traitées avant un déploiement en production.
 
 ---
 
