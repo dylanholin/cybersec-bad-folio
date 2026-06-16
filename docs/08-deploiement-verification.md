@@ -64,6 +64,8 @@ openssl rand -base64 24   # → DB_PASSWORD, ADMIN_PASSWORD
 | `USER nginx` sans permissions | Frontend crash : `mkdir() /var/cache/nginx/client_temp failed` | Préparer les répertoires `RUN mkdir -p /var/cache/nginx/client_temp /var/log/nginx /run && chown -R nginx:nginx ...` avant `USER nginx` |
 | init.sql rejoué | Doublons en base | Volume nommé persistant ; ne pas réinitialiser à chaque `up` |
 | Permissions volume | MariaDB ne démarre pas | Laisser Docker gérer le volume nommé `db_data` |
+| CORS non configuré pour l'IP publique | Login retourne 403 depuis le navigateur (OK en curl local) | Définir `CORS_ALLOWED_ORIGINS=https://<IP-publique>` dans `.env` |
+| `api.js` avec `baseURL` hardcodé | Requêtes vers `localhost:8080` (bloquées par CSP/CORS) | Vérifier `import.meta.env.PROD ? '/api' : 'http://localhost:8080/api'` |
 
 ---
 

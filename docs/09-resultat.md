@@ -31,6 +31,9 @@
 | 19 | Admin MDP trivial | A07-04 | Mot de passe fort (≥ 12 car.) + hash BCrypt |
 | 20 | Axios vulnérable (CVE) | A06-02 | Mise à jour vers `axios ^1.7.0` |
 | 21 | `TokenBlacklistService` hashCode() | A07-05b | Remplacement par SHA-256 (`MessageDigest`) |
+| 22 | CORS hardcodé localhost | A01-05b | `CORS_ALLOWED_ORIGINS` configurable via `.env` (fallback localhost, trim espaces) |
+| 23 | `api.js` hardcodé `localhost:8080` | A07-03b | `baseURL` conditionné par `import.meta.env.PROD` (`/api` en prod) |
+| 24 | JWT dans `localStorage` | A07-03c | Passage à `sessionStorage` (détruit à la fermeture de l'onglet) |
 
 ### 1.2 Corrections d'infrastructure
 

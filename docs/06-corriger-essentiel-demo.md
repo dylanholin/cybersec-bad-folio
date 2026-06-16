@@ -65,7 +65,7 @@ La chaîne JWT (filtre + service + SecurityConfig) est le **prérequis** de tout
 | 12 | Élévation de privilèges (role dans PUT) | A01-04 | Exclusion de `role` de la mise à jour utilisateur, vérification `currentUserId == id` via `Authentication` | `UserController.java` |
 | 13 | IDOR projets | A01-02 | Vérification `project.getOwnerId().equals(currentUserId)` avant PUT/DELETE | `ProjectController.java` |
 | 14 | XSS stocké (v-html) | A03-02 | Remplacement de `v-html="user.bio"` par `{{ user.bio }}` avec `white-space: pre-line` | `ProfileView.vue` |
-| 15 | CORS ouvert (*) | A01-05 | CORS limité à `localhost:5173` et `localhost` | `SecurityConfig.java` |
+| 15 | CORS ouvert (*) | A01-05 | CORS configurable via `CORS_ALLOWED_ORIGINS` (env), fallback localhost, trim espaces | `SecurityConfig.java`, `application.properties`, `.env.example` |
 
 ### 1.3 Phase P2 Améliorations supplémentaires (corrigées)
 
@@ -79,6 +79,7 @@ La chaîne JWT (filtre + service + SecurityConfig) est le **prérequis** de tout
 | 21 | Échecs connexion non loggés | A09-02 | `log.warn("Failed login attempt for: {}", username)` | `AuthController.java` |
 | 22 | Log injection | A03-04 | `log.info("Login attempt for user: {}", username)` au lieu de concaténation | `AuthController.java` |
 | 23 | JWT dans localStorage | A07-03 | Passage à `sessionStorage` (détruit à la fermeture de l'onglet) | `stores/auth.js` |
+| 23b | `api.js` hardcodé `localhost:8080` | A07-03b | `baseURL` conditionné par `import.meta.env.PROD` (`/api` en prod, `localhost:8080` en dev) | `services/api.js` |
 | 24 | Invalidation serveur tokens | A07-05 | `TokenBlacklistService` (blacklist en mémoire avec nettoyage auto) + endpoint `POST /api/auth/logout` | `TokenBlacklistService.java`, `AuthController.java`, `JwtAuthenticationFilter.java` |
 | 25 | Protection admin côté client uniquement | A01-06 | Décode le JWT au lieu de lire localStorage + protection serveur `hasRole("ADMIN")` | `router/index.js`, `SecurityConfig.java` |
 | 26 | CDN sans SRI | A08-01 | Attributs `integrity` + `crossorigin="anonymous"` sur les balises Bootstrap | `index.html` |
@@ -256,8 +257,9 @@ Ce sont des défenses en profondeur. Le rate limiting ne protège que contre le 
 | `.env` non chargé | `Could not resolve placeholder 'JWT_SECRET'` | Charger les variables : `export $(grep -v '^#' .env \| xargs)` |
 | Filtre JWT enregistré deux fois | 403 sur POST anonymes (login) | Vérifier `FilterRegistrationBean(enabled=false)` |
 | init.sql chargé deux fois | Doublons BDD | Nettoyer : `DELETE FROM users WHERE id > 3` |
-| CORS trop restrictif | Frontend bloque les appels API | Vérifier les origines dans SecurityConfig |
+| CORS trop restrictif / non configuré pour l'IP publique | Frontend retourne 403 sur login (OK en curl local) | Définir `CORS_ALLOWED_ORIGINS=https://<IP>` dans `.env` |
 | Certificat non trusted | Avertissement navigateur | Normal en dev (auto-signé) ; Let's Encrypt en prod |
+| `api.js` avec `baseURL` hardcodé | Requêtes vers `localhost:8080` bloquées par CSP/CORS | Vérifier `import.meta.env.PROD ? '/api' : 'http://localhost:8080/api'` |
 | `ddl-auto=validate` + schéma modifié | Erreur au démarrage | Utiliser Flyway/Liquibase pour les migrations |
 
 ---
