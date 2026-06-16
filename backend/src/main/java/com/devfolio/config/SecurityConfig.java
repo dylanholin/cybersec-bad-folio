@@ -2,6 +2,7 @@ package com.devfolio.config;
 
 import com.devfolio.service.JwtService;
 import com.devfolio.service.TokenBlacklistService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,11 +16,17 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    // Origines autorisées pour CORS (séparées par des virgules).
+    // En production : définir CORS_ALLOWED_ORIGINS (ex: https://163.172.147.81).
+    @Value("${cors.allowed-origins:http://localhost:5173,http://localhost}")
+    private String allowedOrigins;
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, TokenBlacklistService tokenBlacklistService) {
@@ -39,7 +46,11 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration config = new CorsConfiguration();
-                config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost"));
+                config.setAllowedOrigins(
+                    Arrays.stream(allowedOrigins.split(","))
+                          .map(String::trim)
+                          .toList()
+                );
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
                 return config;
