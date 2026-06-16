@@ -20,5 +20,8 @@ node_modules/
 *.key
 secrets/
 
+# Fichiers genere's a partir de templates (contiennent des secrets en clair)
+database/init.sql
+
 # Consignes internes (non versionnées)
 docs/CONTEXT.md

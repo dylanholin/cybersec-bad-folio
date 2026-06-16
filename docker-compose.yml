@@ -8,8 +8,11 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./database:/docker-entrypoint-initdb.d
+      - ./database/init.sh:/docker-entrypoint-initdb.d/init.sh
+      - ./database/init-template.sql:/templates/init-template.sql:ro
       - db_data:/var/lib/mysql
     networks:
       - backend-db
