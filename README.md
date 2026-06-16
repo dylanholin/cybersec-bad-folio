@@ -17,6 +17,7 @@ Les fichiers `docs/` sont synchronisés sur les deux branches.
 
 ```bash
 cp .env.example .env   # Éditer .env avec vos propres valeurs
+# Important : en production, définir CORS_ALLOWED_ORIGINS=https://<votre-domaine>
 docker-compose up --build
 ```
 
