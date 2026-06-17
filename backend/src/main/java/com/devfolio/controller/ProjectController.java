@@ -1,5 +1,6 @@
 package com.devfolio.controller;
 
+import com.devfolio.dto.ProjectUpdateRequest;
 import com.devfolio.model.Project;
 import com.devfolio.repository.ProjectRepository;
 import com.devfolio.util.UrlValidator;
@@ -44,7 +45,7 @@ public class ProjectController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProject(@PathVariable Long id,
-                                            @RequestBody Project updated,
+                                            @RequestBody ProjectUpdateRequest updated,
                                             Authentication authentication) {
         Long currentUserId = (Long) authentication.getDetails();
         return projectRepository.findById(id).map(project -> {
