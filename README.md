@@ -11,7 +11,7 @@ Application portfolio étudiant : Spring Boot 3.2 + Vue 3 + MariaDB
 | `main` | Version vulnérable originale, conservée pour la démonstration pédagogique |
 | `correction` | Version sécurisée avec les corrections OWASP Top 10 2025 |
 
-Les fichiers `docs/` sont synchronisés sur les deux branches.
+Le fichier `README.md` est synchronisé sur les deux branches.
 
 ## Démarrage
 
@@ -47,7 +47,7 @@ Les vérifications suivantes ont été exécutées avec succès sur le backend (
 | Rate limiting (5 tentatives/min sur login) | 429 Too Many Requests |
 | Logout + token blacklisté | Déconnexion réussie |
 
-Un script de vérification automatisée pour un déploiement Docker complet (HTTPS, conteneur non root, MariaDB non exposé) est disponible dans la [doc 06, section 7](docs/06-corriger-essentiel-demo.md#7-automatisation-des-vérifications-de-sécurité).
+Un script de vérification automatisée pour un déploiement Docker complet est documenté dans la branche `correction`.
 
 ## Comptes de test
 
@@ -59,13 +59,5 @@ Un script de vérification automatisée pour un déploiement Docker complet (HTT
 
 ## Documentation
 
-- [Prise en main](docs/00-prise-en-main.md)
-- [Audit des vulnérabilités](docs/01-audit-vulnerabilites.md)
-- [Mapping OWASP Top 10 2025](docs/02-owasp-mapping.md)
-- [Plan d'action](docs/03-plan-action.md)
-- [Infrastructure](docs/04-infrastructure.md)
-- [Installation du projet sur Linux](docs/05-installation-linux.md)
-- [Corriger l'essentiel avant la démo](docs/06-corriger-essentiel-demo.md)
-- [Durcir et préparer le serveur de démonstration](docs/07-durcissement-serveur.md)
-- [Déployer l'application et vérifier l'exposition réseau](docs/08-deploiement-verification.md)
-- [Résultat final du projet](docs/09-resultat.md)
+La documentation complète (audit, plan d'action, résultats) est disponible sur la branche `correction` :
+https://github.com/dylanholin/cybersec-bad-folio/tree/correction/docs
