@@ -1,5 +1,6 @@
 package com.devfolio.controller;
 
+import com.devfolio.dto.ProjectCreateRequest;
 import com.devfolio.dto.ProjectUpdateRequest;
 import com.devfolio.model.Project;
 import com.devfolio.repository.ProjectRepository;
@@ -36,9 +37,15 @@ public class ProjectController {
     }
 
     @PostMapping
-    public ResponseEntity<Project> createProject(@RequestBody Project project,
+    public ResponseEntity<Project> createProject(@RequestBody ProjectCreateRequest request,
                                                   Authentication authentication) {
         Long currentUserId = (Long) authentication.getDetails();
+        Project project = new Project();
+        project.setTitle(request.getTitle());
+        project.setDescription(request.getDescription());
+        project.setGithubUrl(request.getGithubUrl());
+        project.setImageUrl(request.getImageUrl());
+        project.setIsPublic(request.getIsPublic() != null ? request.getIsPublic() : true);
         project.setOwnerId(currentUserId);
         return ResponseEntity.ok(projectRepository.save(project));
     }
@@ -56,6 +63,9 @@ public class ProjectController {
             project.setDescription(updated.getDescription());
             project.setGithubUrl(updated.getGithubUrl());
             project.setImageUrl(updated.getImageUrl());
+            if (updated.getIsPublic() != null) {
+                project.setIsPublic(updated.getIsPublic());
+            }
             return ResponseEntity.ok(projectRepository.save(project));
         }).orElse(ResponseEntity.notFound().build());
     }
