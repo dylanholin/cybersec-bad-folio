@@ -138,7 +138,7 @@ Internet → [UFW: 80/443] → nginx (frontend, USER nginx)
 | `esbuild` ≤ 0.28.0 (via Vite 5) | INFO | Vulnérabilité **dev uniquement** (serveur de dev local) — pas d'impact en production (build conteneurisé). Mise à jour vers Vite 8 en cas de changement majeur. |
 | Mot de passe `devfolio_app` en dur dans `init.sql` | ~~BASSE~~ | ~~`'DevfolioApp2024!'` est hardcodé dans le script SQL commité~~ | **Corrigé** : `init.sql` remplacé par `init-template.sql` + `init.sh` avec injection `${DB_PASSWORD}`. Fichier genere supprime immediatement apres execution. |
 | DNS rebinding possible sur `UrlValidator` | BASSE | La résolution DNS et la requête HTTP ne sont pas atomiques. Valider l'IP au moment de la connexion socket. |
-| Mass assignment partiel sur `ProjectController.updateProject()` | BASSE | `@RequestBody Project` permet de modifier `isPublic`. Créer un DTO `ProjectUpdateRequest` avec champs contrôlés. |
+| Mass assignment partiel sur `ProjectController.updateProject()` | ~~BASSE~~ | ~~`@RequestBody Project` permet de modifier `isPublic`. Créer un DTO `ProjectUpdateRequest` avec champs contrôlés.~~ | **Corrigé** : DTOs `ProjectCreateRequest` et `ProjectUpdateRequest` créés. Champs contrôlés (pas d'`id`, pas d'`ownerId`). Construction manuelle de l'entity côté serveur. |
 | Pas de validation du format email côté serveur | INFO | `AuthService.register()` ne vérifie pas le format email. Ajouter `@Email` ou regex. |
 | Fallback `${DB_PASSWORD:}` (chaîne vide) | INFO | `spring.datasource.password=${DB_PASSWORD:}` possède un fallback vide. Supprimer le fallback sur un secret. |
 | `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | INFO | Mot de passe root MariaDB identique au compte applicatif. Séparer `DB_ROOT_PASSWORD` et `DB_PASSWORD`. |
