@@ -1,6 +1,6 @@
 # DevFolio
 
-Application portfolio étudiant : Spring Boot 3.2 + Vue 3 + MariaDB
+Application portfolio étudiant : Spring Boot 3.5 + Vue 3 + MariaDB
 
 > Projet pédagogique de sécurisation. Les clés et identifiants présents dans le dépôt sont **fictifs** (exemples AWS, mots de passe de test). En production, tous les secrets doivent être externalisés et les credentials révoqués si compromis.
 

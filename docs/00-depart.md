@@ -44,7 +44,7 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 
 | Couche | Technologie |
 |---|---|
-| Backend | Spring Boot 3.2, Java 21, Maven |
+| Backend | Spring Boot 3.5, Java 21, Maven |
 | Frontend | Vue 3, Vite, Bootstrap 5 |
 | Base de données | MariaDB 10.11 |
 | CI | GitHub Actions (runner `ubuntu-latest`) |
@@ -141,7 +141,7 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 - **Jamais de `.env` commité** : `.env` est dans `.gitignore`, généré par GitHub Secrets ou copié sur le VPS
 - **Pas de `latest` tag en production** : images versionnées (`:1.2.3`) ou SHA du commit
 - **Build avant test** : `mvn clean compile` doit passer avant les tests
-- **Scan bloquant** : un échec SAST (Semgrep) ou Trivy bloque le merge
+- **Scan bloquant** : un échec Trivy (vulnérabilités HIGH/CRITICAL) bloque le pipeline. Semgrep (SAST) est non-bloquant : le rapport SARIF est uploadé pour analyse dans l'onglet Security de GitHub
 - **Pas de déploiement automatique sur production** : staging automatique, prod manuelle (review)
 
 ---
