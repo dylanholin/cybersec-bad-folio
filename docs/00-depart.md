@@ -90,7 +90,7 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
    - Scan d'image Docker avec Trivy
    - Push des images sur GHCR (GitHub Container Registry)
 
-5. **`docker-compose.staging.yml`** ✅ (créé)
+5. **`docker-compose.staging.yml`**
    - Images pré-construites depuis GHCR (pas de build local sur le VPS)
    - Tag d'image explicite via `${IMAGE_TAG}` (SHA du commit, pas de `:latest`)
    - Variables d'environnement via `.env` sur le VPS
@@ -151,24 +151,15 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 | Phase | Statut | Détail |
 |---|---|---|
 | **Phase 1 — Infrastructure VPS** | ✅ Terminée | fail2ban, UFW, Nginx hôte, certificat auto-signé, `.env` créé |
-| **Phase 2 — Pipeline CI** | À faire | `.github/workflows/ci.yml`, push images GHCR |
-| **Phase 3 — Tests automatisés** | À faire | JUnit + Mockito, E2E |
+| **Phase 2 — Pipeline CI** | ✅ Terminée | `.github/workflows/ci.yml`, tests, Semgrep, Trivy, push GHCR — voir `docs/01-pipeline-ci.md` |
+| **Phase 3 — Tests automatisés** | En cours | JUnit + Mockito (initial), E2E à faire |
 | **Phase 4 — Déploiement continu** | À faire | SSH deploy, healthcheck, rollback |
-
-### Phase 1 — Récapitulatif VPS
-
-- **OS** : Debian 13 (trixie), kernel 6.12.90
-- **Docker** : 29.5.3 + Compose v5.1.4
-- **fail2ban** : 1.1.0, jail sshd (bantime 1h, maxretry 3)
-- **UFW** : actif, ports 22/80/443 uniquement
-- **Nginx hôte** : 1.26.3, reverse proxy `127.0.0.1:8080` (backend) + `127.0.0.1:3000` (frontend)
-- **Certificat** : auto-signé (pas de domaine), validité 365 jours
-- **En-têtes sécurité** : HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
-- **Conteneurs Docker** : backend + MariaDB sur `127.0.0.1` uniquement, frontend arrêté (remplacé par Nginx hôte)
-- **`.env`** : créé sur le VPS (non versionné), contient `CORS_ALLOWED_ORIGINS`, `JWT_SECRET`, `IMAGE_TAG=manual`
 
 ---
 
 ## Prochaine étape
 
-→ **Phase 2 — Pipeline CI** : créer `.github/workflows/ci.yml` (build, tests, scan, push images GHCR).
+→ **Phase 3 — Tests automatisés** : étendre la couverture de tests (E2E, testcontainers MariaDB).
+→ **Phase 4 — Déploiement continu** : SSH deploy sur le VPS via GitHub Actions.
+
+> L'implémentation détaillée des phases terminées est documentée dans `docs/01-pipeline-ci.md`.

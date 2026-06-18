@@ -12,7 +12,9 @@ Application portfolio étudiant : Spring Boot 3.2 + Vue 3 + MariaDB
 | `correction` | Version sécurisée avec les corrections OWASP Top 10 2025 |
 | `ci-cd-pipeline` | Pipeline de déploiement continu (Kit 2), dérivée de `correction` |
 
-Le fichier `README.md` est synchronisé sur `main` et `correction`. La branche `ci-cd-pipeline` possède sa propre documentation CI/CD dans `docs/00-depart.md`.
+Le fichier `README.md` est synchronisé sur `main` et `correction`. La branche `ci-cd-pipeline` possède sa propre documentation CI/CD :
+- `docs/00-depart.md` — plan et architecture cible
+- `docs/01-pipeline-ci.md` — implémentation détaillée (Phase 1 VPS + Phase 2 CI)
 
 ## Démarrage
 
