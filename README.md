@@ -2,7 +2,7 @@
 
 Application portfolio étudiant : Spring Boot 3.5 + Vue 3 + MariaDB
 
-> Projet pédagogique de sécurisation. Les clés et identifiants présents dans le dépôt sont **fictifs** (exemples AWS, mots de passe de test). En production, tous les secrets doivent être externalisés et les credentials révoqués si compromis.
+> Projet pédagogique de sécurisation et de CI/CD. Les clés et identifiants présents dans le dépôt sont **fictifs** (exemples AWS, mots de passe de test). En production, tous les secrets doivent être externalisés et les credentials révoqués si compromis.
 
 ## Branches
 
@@ -10,11 +10,35 @@ Application portfolio étudiant : Spring Boot 3.5 + Vue 3 + MariaDB
 |---------|-------------|
 | `main` | Version vulnérable originale, conservée pour la démonstration pédagogique |
 | `correction` | Version sécurisée avec les corrections OWASP Top 10 2025 |
-| `ci-cd-pipeline` | Pipeline de déploiement continu (Kit 2), dérivée de `correction` |
+| `ci-cd-pipeline` | Pipeline de déploiement continu (Kit 2), dérivée de `correction` — contient tout le contenu de `correction` + le pipeline CI/CD |
 
-Le fichier `README.md` est synchronisé sur `main` et `correction`. La branche `ci-cd-pipeline` possède sa propre documentation CI/CD :
-- `docs/00-depart.md` — plan et architecture cible
-- `docs/01-pipeline-ci.md` — implémentation détaillée (Phase 1 VPS + Phase 2 CI)
+## Documentation
+
+La documentation est organisée en deux dossiers :
+
+### `docs/securite/` — Sécurisation OWASP (Kit 1)
+
+| Fichier | Contenu |
+|---------|---------|
+| `00-prise-en-main.md` | Prise en main du projet et de ses vulnérabilités |
+| `01-audit-vulnerabilites.md` | Audit complet des vulnérabilités |
+| `02-owasp-mapping.md` | Mapping OWASP Top 10 2025 |
+| `03-plan-action.md` | Plan d'action correctif |
+| `04-infrastructure.md` | Infrastructure et configuration |
+| `05-installation-linux.md` | Installation sur Linux |
+| `06-corriger-essentiel-demo.md` | Corrections essentielles pour la démo |
+| `07-durcissement-serveur.md` | Durcissement du serveur |
+| `08-deploiement-verification.md` | Déploiement et vérification |
+| `09-resultat.md` | Résultats et bilan |
+
+### `docs/ci-cd/` — Pipeline CI/CD (Kit 2)
+
+| Fichier | Contenu |
+|---------|---------|
+| `00-depart.md` | Plan et architecture cible du pipeline |
+| `01-pipeline-ci.md` | Implémentation détaillée (Phase 1 VPS + Phase 2 CI) |
+| `diagramme-deploiement.drawio` | Diagramme UML de déploiement (diagrams.net) |
+| `diagramme-deploiement.drawio.png` | Export PNG du diagramme UML |
 
 ## Démarrage
 
@@ -24,7 +48,7 @@ cp .env.example .env   # Éditer .env avec vos propres valeurs
 docker-compose up --build
 ```
 
-### Branche `correction` (sécurisée)
+### Branche `correction` / `ci-cd-pipeline` (sécurisée)
 
 - Frontend : https://localhost (HTTPS avec certificat auto-signé en dev)
 - Backend API : https://localhost/api (via reverse proxy nginx)
@@ -50,7 +74,18 @@ Les vérifications suivantes ont été exécutées avec succès sur le backend (
 | Rate limiting (5 tentatives/min sur login) | 429 Too Many Requests |
 | Logout + token blacklisté | Déconnexion réussie |
 
-Un script de vérification automatisée pour un déploiement Docker complet est documenté dans la branche `correction`.
+Un script de vérification automatisée pour un déploiement Docker complet est documenté dans `docs/securite/08-deploiement-verification.md`.
+
+## Tests automatisés (branche `ci-cd-pipeline`)
+
+| Test | Framework | Couverture |
+|------|-----------|------------|
+| Backend — `JwtServiceTest` | JUnit 5 + Mockito | 4 tests (génération, validation, rejet alg:none, rejet secret différent) |
+| Backend — `UrlValidatorTest` | JUnit 5 | 6 tests (HTTPS, whitelist, SSRF, URL malformée) |
+| Backend — `AuthControllerTest` | JUnit 5 + Mockito | 7 tests (login, register, logout, rate limiting) |
+| Frontend — `basic.test.js` | Vitest | 2 tests (sanity check) |
+
+Pipeline CI : `.github/workflows/ci.yml` — voir `docs/ci-cd/01-pipeline-ci.md` pour le détail.
 
 ## Comptes de test
 
@@ -59,8 +94,3 @@ Un script de vérification automatisée pour un déploiement Docker complet est 
 | admin@devfolio.com | DevfolioAdmin2024! | ADMIN |
 | lilo@student.com | liloPass2024! | USER |
 | dylan@student.com | dylanPass2024! | USER |
-
-## Documentation
-
-La documentation complète (audit, plan d'action, résultats) est disponible sur la branche `correction` :
-https://github.com/dylanholin/cybersec-bad-folio/tree/correction/docs

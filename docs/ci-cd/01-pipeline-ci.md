@@ -330,7 +330,7 @@ exit-code: '1'          # bloquant
 | `.github/workflows/ci.yml` | Création + corrections successives (Semgrep CLI, Buildx, Trivy v0.36.0, scanners vuln, ignore-unfixed, Node 22, actions:write) | `ca05741` + corrections |
 | `backend/Dockerfile` | Ajout `apk update && apk upgrade` (fix CVE OpenSSL Alpine) | `a881045` |
 | `frontend/Dockerfile` | Node 20 → 22 + `apk update && apk upgrade` | `a881045` |
-| `docs/01-pipeline-ci.md` | Création + mise à jour corrections pipeline + diagramme Mermaid | `cbd22e7` + mises à jour |
-| `docs/diagramme-deploiement.drawio` | Création — diagramme UML de déploiement (diagrams.net) | à commiter |
-| `docs/diagramme-deploiement.drawio.png` | Export PNG du diagramme UML (livrable visuel) | à commiter |
+| `docs/ci-cd/01-pipeline-ci.md` | Création + mise à jour corrections pipeline + diagramme Mermaid | `cbd22e7` + mises à jour |
+| `docs/ci-cd/diagramme-deploiement.drawio` | Création — diagramme UML de déploiement (diagrams.net) | à commiter |
+| `docs/ci-cd/diagramme-deploiement.drawio.png` | Export PNG du diagramme UML (livrable visuel) | à commiter |
 | `docker-compose.staging.yml` | Création (Phase 1) | `3f0c687` |
