@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,7 +17,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class JwtServiceTest {
 
     private JwtService jwtService;
-    private final String secret = Base64.getEncoder().encodeToString(new byte[48]);
+    private final String secret = generateRandomSecret();
+
+    private static String generateRandomSecret() {
+        byte[] bytes = new byte[48];
+        new SecureRandom().nextBytes(bytes);
+        return Base64.getEncoder().encodeToString(bytes);
+    }
 
     @BeforeEach
     void setUp() {
@@ -66,7 +73,7 @@ class JwtServiceTest {
     @Test
     void validateToken_shouldRejectTokenWithDifferentSecret() {
         String token = jwtService.generateToken(createUser());
-        String otherSecret = Base64.getEncoder().encodeToString(new byte[48]);
+        String otherSecret = generateRandomSecret();
 
         assertThrows(Exception.class, () -> {
             Jwts.parserBuilder()

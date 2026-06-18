@@ -79,15 +79,16 @@ Fichier : `.github/workflows/ci.yml`
 #### 2. `test-frontend` — Tests + build frontend
 
 - **Runner** : `ubuntu-latest`
-- **Node** : 20 (cache npm activé)
+- **Node** : 22 (cache npm activé)
 - **Commandes** : `npm ci` → `npm test` → `npm run build`
 - **Frameworks** : Vitest 1.x + @vue/test-utils 2.x
 
 #### 3. `scan-sast` — Scan statique (Semgrep)
 
-- **Outil** : Semgrep (config `auto`)
-- **Sortie** : rapport SARIF uploadé via `github/codeql-action/upload-sarif`
-- **Non bloquant** à ce stade (informatif)
+- **Outil** : Semgrep (action `semgrep/semgrep-action@v1`, config `auto`)
+- **Arguments** : `--sarif --output=semgrep.sarif`
+- **Permissions** : `security-events: write` pour l'upload SARIF
+- **Sortie** : rapport SARIF uploadé via `github/codeql-action/upload-sarif@v4`
 
 #### 4. `build-and-push` — Build, scan Trivy, push GHCR
 
@@ -110,9 +111,12 @@ Fichier : `.github/workflows/ci.yml`
 
 ### Secrets utilisés
 
-| Secret | Source | Usage |
+| Secret / Permission | Source | Usage |
 |---|---|---|
 | `GITHUB_TOKEN` | Auto (GitHub Actions) | Login + push sur GHCR |
+| `security-events: write` | Permissions du job | Upload du rapport SARIF (Semgrep) |
+| `packages: write` | Permissions du job | Push des images Docker sur GHCR |
+| `contents: read` | Permissions du job | Checkout du code |
 
 Aucun secret manuel requis pour la phase CI. Les secrets SSH pour le déploiement (Phase 4) seront ajoutés ultérieurement.
 
@@ -127,6 +131,8 @@ Aucun secret manuel requis pour la phase CI. Les secrets SSH pour le déploiemen
 | `JwtServiceTest` | 4 | Génération de token, validation, rejet token falsifié, rejet `alg:none`, rejet secret différent |
 | `UrlValidatorTest` | 6 | HTTPS only, whitelist, rejet IP metadata (169.254.169.254), URL malformée, taille max fetch |
 | `AuthControllerTest` | 7 | Login 200/401/429, register 200/400, logout, rate limiting, password mismatch |
+
+> **Note** : le test `validateToken_shouldRejectTokenWithDifferentSecret` a nécessité un secret aléatoire (`SecureRandom`) car deux appels à `Base64.getEncoder().encodeToString(new byte[48])` produisent le même encodage (tableau de zéros), ce qui invalidait le test.
 
 ### Frontend — 1 fichier, 2 tests
 
@@ -194,11 +200,12 @@ Aucun secret manuel requis pour la phase CI. Les secrets SSH pour le déploiemen
 | Fichier | Action | Commit |
 |---|---|---|
 | `backend/pom.xml` | Ajout `spring-boot-starter-test` | `9f84d20` |
-| `backend/src/test/java/.../JwtServiceTest.java` | Création | `9f84d20` |
+| `backend/src/test/java/.../JwtServiceTest.java` | Création + correction secret aléatoire | `9f84d20` + correction |
 | `backend/src/test/java/.../UrlValidatorTest.java` | Création | `9f84d20` |
 | `backend/src/test/java/.../AuthControllerTest.java` | Création | `9f84d20` |
 | `frontend/package.json` | Ajout Vitest + @vue/test-utils + jsdom | `9f84d20` |
 | `frontend/vitest.config.js` | Création | `9f84d20` |
 | `frontend/src/test/basic.test.js` | Création | `9f84d20` |
-| `.github/workflows/ci.yml` | Création | `ca05741` |
+| `.github/workflows/ci.yml` | Création + correction Semgrep/SARIF | `ca05741` + correction |
+| `docs/01-pipeline-ci.md` | Création | `cbd22e7` |
 | `docker-compose.staging.yml` | Création (Phase 1) | `3f0c687` |
