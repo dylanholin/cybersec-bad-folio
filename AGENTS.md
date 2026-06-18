@@ -122,6 +122,11 @@ mvn spring-boot:run   # Nécessite MariaDB en local et .env chargé
 - `application.properties` : pas de fallback hardcodé sur `jwt.secret` ni `spring.datasource.password`.
 - Le secret JWT doit faire **≥ 32 octets** (recommandé : 48 caractères base64) pour que `Keys.hmacShaKeyFor()` fonctionne.
 
+### Divulgation d'informations sensibles — Interdiction totale
+- **Jamais d'IP publique dans le repo** : pas dans le code, pas dans les commentaires, pas dans la documentation, pas dans les messages de commit. Utiliser `<VPS_IP>`, `<SERVER_IP>` ou des variables d'environnement.
+- **Jamais de secret dans un message de commit** : pas de mot de passe, pas de token, pas de clé API, pas d'URL avec credentials, pas d'IP publique. Le message de commit ne doit jamais révéler l'existence d'une fuite passée.
+- **Jamais d'exemple concret avec une valeur réelle** : les placeholders dans [.env.example](cci:7://file:///c:/Users/Working/Documents/github/cybersec-bad-folio/.env.example:0:0-0:0), les commentaires de code, et la documentation utilisent exclusivement des valeurs fictives (`<<VPS_IP>`, `example.com`, `your-email@example.com`).
+
 ### Docker & Infrastructure
 - Dockerfile backend : image `eclipse-temurin:21-jre-alpine`, `USER appuser`, pas de port debug 5005.
 - Dockerfile frontend : `nginx:alpine` ou similaire.
@@ -158,8 +163,9 @@ mvn spring-boot:run   # Nécessite MariaDB en local et .env chargé
 
 ## Validation des changements
 
-Aucune suite de tests automatisée n'existe (YAGNI sur ce projet pédagogique). Avant de proposer une modif, vérifier manuellement :
+Vérification manuelle :
 
+- **Anti-fuite** : `grep -rE "([0-9]{1,3}\.){3}[0-9]{1,3}"` ne retourne aucune IP publique (hors `127.0.0.1`, `10.*`, `192.168.*`, `172.16-31.*`).
 - **Build Maven** : `cd backend && mvn clean compile` passe sans erreur
 - **Build frontend** : `cd frontend && npm install && npm run build` passe sans erreur
 - **Docker Compose** : `docker-compose up --build` démarre sans crash (healthcheck MariaDB OK)
@@ -207,6 +213,8 @@ Cette branche dérive de `correction` et est dédiée au cours de CI/CD. Les rè
 - **Tag d'image explicite** : pas de `latest` en production, utiliser le SHA du commit ou une version sémantique.
 - **VPS minimaliste** : pas de Java 21 ni Node.js installés sur le VPS. Docker-only pour l'exécution.
 - **Pas de Certbot sans nom de domaine** : Let's Encrypt requiert un FQDN. En l'absence de domaine, utiliser un certificat auto-signé ou celui fourni par l'hébergeur.
+- **Aucune IP publique** : tout code, commentaire et documentation est scanné avant commit.
+- **Message de commit anodin** : pas de mention de secret, d'IP, ou de mot de passe.
 
 ### Déploiement
 - **Staging automatique**, **production manuelle** (review obligatoire).
