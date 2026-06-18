@@ -239,6 +239,20 @@ Trivy a remonté **3 CVE Alpine** + **33 CVE Java** (27 HIGH, 6 CRITICAL).
 
 > Le certificat auto-signé est généré dans le Dockerfile (`openssl req -x509 -nodes`). La clé privée n'est pas une fuite réelle — elle est embarquée dans l'image pour le HTTPS de dev/staging.
 
+### Run #7 — Succès ✅
+
+| Résultat | Détail |
+|---|---|
+| **Status** | Success (3m 16s) |
+| **Tests backend** | 15 tests JUnit passés |
+| **Tests frontend** | Vitest + build passés |
+| **Semgrep** | Scan SAST complété, SARIF uploadé |
+| **Trivy backend** | 0 vulnérabilités HIGH/CRITICAL |
+| **Trivy frontend** | 0 vulnérabilités HIGH/CRITICAL |
+| **Images poussées** | GHCR : `devfolio-backend:8a73a2e`, `devfolio-frontend:8a73a2e` |
+
+> **Note** : Des warnings `Node.js 20 is deprecated` apparaissent sur `actions/checkout@v4`, `docker/build-push-action@v6`, etc. Ces warnings sont des **deprecation notices non bloquants** — GitHub Actions force automatiquement l'exécution sur Node 24. Les actions restent fonctionnelles ; la migration officielle vers les versions Node 22/24 des actions attend les releases upstream.
+
 ### Configuration Trivy finale
 
 ```yaml
