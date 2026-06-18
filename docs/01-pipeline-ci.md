@@ -164,6 +164,58 @@ Aucun secret manuel requis pour la phase CI. Les secrets SSH pour le déploiemen
 
 ## Diagramme de déploiement
 
+> **Livrable UML** : le diagramme complet est disponible :
+>
+> - **Format modifiable** : [`diagramme-deploiement.drawio`](./diagramme-deploiement.drawio) — ouvrir avec https://app.diagrams.net
+> - **Image exportée** : [`diagramme-deploiement.drawio.png`](./diagramme-deploiement.drawio.png) — livrable visuel du diagramme UML
+
+### Version Mermaid (rendu GitHub)
+
+```mermaid
+graph TB
+    subgraph GHA["GitHub Actions (CI Runner)"]
+        REPO["Dépôt Git<br/>(branche ci-cd-pipeline)"]
+        TEST_BE["test-backend<br/>(JUnit 5 + Mockito)"]
+        TEST_FE["test-frontend<br/>(Vitest + Vite build)"]
+        SAST["scan-sast<br/>(Semgrep → SARIF)"]
+        BUILD["build-and-push<br/>(Docker Buildx + Trivy)"]
+    end
+
+    subgraph GHCR["GHCR (Container Registry)"]
+        IMG_BE["devfolio-backend:SHA"]
+        IMG_FE["devfolio-frontend:SHA"]
+    end
+
+    subgraph VPS["VPS Debian (&lt;VPS_IP&gt;)"]
+        NGINX["Nginx (Reverse Proxy hôte)<br/>:443 / :80 — TLS auto-signé"]
+        F2B["fail2ban (SSH)"]
+        UFW["UFW (22/80/443)"]
+
+        subgraph DOCKER["Docker Engine"]
+            BE["backend<br/>(Spring Boot 3.5)<br/>:8080 → 127.0.0.1"]
+            FE["frontend<br/>(Nginx + Vue 3)<br/>:3000 → 127.0.0.1"]
+            DB["MariaDB 10.11<br/>:3306 → 127.0.0.1<br/>Volume: db_data"]
+            ENV[".env<br/>(secrets non versionnés)"]
+            COMPOSE["docker-compose.staging.yml<br/>(images GHCR pré-construites)"]
+        end
+    end
+
+    CLIENT["Client (Navigateur web)"]
+
+    BUILD -->|"push images"| GHCR
+    BUILD -.->|"SSH deploy (Phase 4)"| VPS
+    GHCR -->|"docker pull"| VPS
+    CLIENT -->|"HTTPS"| NGINX
+    NGINX -->|"proxy /api"| BE
+    NGINX -->|"proxy /"| FE
+    BE -->|"JPA / JDBC"| DB
+    FE -->|"API REST"| BE
+    ENV -.->|"env_file"| BE
+    COMPOSE -.->|"orchestre"| DOCKER
+```
+
+### Version ASCII (référence rapide)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  VPS Debian (<VPS_IP>)                                    │
@@ -278,5 +330,7 @@ exit-code: '1'          # bloquant
 | `.github/workflows/ci.yml` | Création + corrections successives (Semgrep CLI, Buildx, Trivy v0.36.0, scanners vuln, ignore-unfixed, Node 22, actions:write) | `ca05741` + corrections |
 | `backend/Dockerfile` | Ajout `apk update && apk upgrade` (fix CVE OpenSSL Alpine) | `a881045` |
 | `frontend/Dockerfile` | Node 20 → 22 + `apk update && apk upgrade` | `a881045` |
-| `docs/01-pipeline-ci.md` | Création + mise à jour corrections pipeline | `cbd22e7` + mise à jour |
+| `docs/01-pipeline-ci.md` | Création + mise à jour corrections pipeline + diagramme Mermaid | `cbd22e7` + mises à jour |
+| `docs/diagramme-deploiement.drawio` | Création — diagramme UML de déploiement (diagrams.net) | à commiter |
+| `docs/diagramme-deploiement.drawio.png` | Export PNG du diagramme UML (livrable visuel) | à commiter |
 | `docker-compose.staging.yml` | Création (Phase 1) | `3f0c687` |
