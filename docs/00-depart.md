@@ -65,15 +65,18 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
    - Configurer `fail2ban` pour SSH
    - Activer le firewall UFW (ports 22, 80, 443)
 
-2. **Installer Nginx**
-   - Reverse proxy vers le backend (port 8080) et le frontend (port 80/443)
+2. **Installer Nginx sur l'hôte** (Option A — Nginx hôte)
+   - Arrêter le conteneur frontend existant (conflit ports 80/443)
+   - Reverse proxy : `127.0.0.1:8080` (backend) et `127.0.0.1:3000` (frontend)
+   - HTTP → redirection 301 vers HTTPS
    - HTTPS avec certificat auto-signé (pas de nom de domaine → pas de Let's Encrypt)
-   - En-têtes de sécurité (HSTS, X-Frame-Options, CSP)
+   - En-têtes de sécurité 2026 : HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
 
 3. **Préparer Docker sur le VPS**
-   - Vérifier Docker et Docker Compose (déjà installés)
-   - Créer un réseau Docker isolé pour l'application
-   - Préparer un volume persistant pour MariaDB
+   - Docker 29.5.3 et Docker Compose v5.1.4 déjà installés ✅
+   - Réseaux Docker isolés : `frontend-backend` et `backend-db`
+   - Volume persistant `db_data` pour MariaDB
+   - Tous les ports mappés sur `127.0.0.1` uniquement (pas d'exposition publique)
 
 ### Phase 2 — Pipeline CI (GitHub Actions)
 
@@ -87,10 +90,13 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
    - Scan d'image Docker avec Trivy
    - Push des images sur GHCR (GitHub Container Registry)
 
-5. **Créer `docker-compose.staging.yml`**
-   - Version allégée pour le VPS (pas de build, juste `image:`)
+5. **`docker-compose.staging.yml`** ✅ (créé)
+   - Images pré-construites depuis GHCR (pas de build local sur le VPS)
+   - Tag d'image explicite via `${IMAGE_TAG}` (SHA du commit, pas de `:latest`)
    - Variables d'environnement via `.env` sur le VPS
-   - Healthchecks pour MariaDB et le backend
+   - Healthchecks pour MariaDB et le backend (`/actuator/health`)
+   - Tous les ports mappés sur `127.0.0.1` (frontend `3000:80`, backend `8080:8080`, MariaDB `3306:3306`)
+   - `restart: unless-stopped` sur tous les services
 
 ### Phase 3 — Tests automatisés
 
