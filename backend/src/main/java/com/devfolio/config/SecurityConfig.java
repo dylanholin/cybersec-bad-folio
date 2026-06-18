@@ -24,7 +24,7 @@ import java.util.List;
 public class SecurityConfig {
 
     // Origines autorisées pour CORS (séparées par des virgules).
-    // En production : définir CORS_ALLOWED_ORIGINS (ex: https://163.172.147.81).
+    // En production : définir CORS_ALLOWED_ORIGINS (ex: https://<VPS_IP>).
     @Value("${cors.allowed-origins:http://localhost:5173,http://localhost}")
     private String allowedOrigins;
 

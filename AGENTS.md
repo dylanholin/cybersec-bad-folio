@@ -11,6 +11,7 @@ Instructions pour les assistants IA (Devin, Cascade, Cursor, Copilot, Claude Cod
 - Branches :
   - `main` : version vulnérable originale (à préserver pour la démonstration pédagogique)
   - `correction` : version sécurisée avec les corrections OWASP Top 10 2025
+  - `ci-cd-pipeline` : pipeline de déploiement continu (Kit 2), dérivée de `correction`
 
 ## Réflexion avant action (règle méta)
 
@@ -68,6 +69,8 @@ cybersec-bad-folio/
 │       └── util/                 # UrlValidator (SSRF)
 │   └── src/main/resources/
 │       └── application.properties # Configuration Spring (durcie)
+└── docs/                         # Documentation du cours CI/CD
+    └── 00-depart.md              # Plan du pipeline et architecture cible
 ├── frontend/
 │   ├── index.html                # Bootstrap CDN avec SRI
 │   ├── nginx.conf                # Reverse proxy + en-têtes sécurité
@@ -77,14 +80,6 @@ cybersec-bad-folio/
 │       ├── stores/               # Pinia (auth.js — JWT sessionStorage)
 │       ├── services/             # API client (axios)
 │       └── router/               # Vue Router
-└── docs/                         # Documentation de l'audit
-    ├── 00-prise-en-main.md
-    ├── 01-audit-vulnerabilites.md
-    ├── 02-owasp-mapping.md
-    ├── 03-plan-action.md
-    ├── 04-infrastructure.md
-    ├── 05-installation-linux.md
-    └── 06-corriger-essentiel-demo.md
 ```
 
 ## Développement local
@@ -174,6 +169,17 @@ Aucune suite de tests automatisée n'existe (YAGNI sur ce projet pédagogique). 
 - **SSRF** : `POST /api/users/avatar?url=http://169.254.169.254/` → 400
 - **Actuator** : `/actuator/env` et `/actuator/heapdump` → 403
 
+## Process de correction (anti-régression)
+
+Pour chaque vulnérabilité ou bug identifié :
+
+1. **Un changement = une correction isolée** : ne pas mélanger plusieurs correctifs dans le même fichier modifié sans rapport.
+2. **Tester avant de commiter** : après chaque correction, exécuter le build (`mvn clean compile`, `npm run build`) et le test manuel associé (JWT, injection, SSRF, etc.).
+3. **Commit atomique** : une fois le test validé, créer un commit avec un message Conventional Commit décrivant la correction.
+4. **Vérifier la branche** : ne jamais pousser de correction sur `main` ; toujours utiliser `correction`.
+
+> Exemple : corriger le mass assignment → build Maven OK → test manuel `PUT /api/projects` → `git commit -m "fix(controller): ajouter DTO ProjectUpdateRequest pour prévenir mass assignment"`
+
 ## Workflow Git
 
 - **Commits atomiques** : une intention = un commit. Pas de god commit.
@@ -187,6 +193,25 @@ Aucune suite de tests automatisée n'existe (YAGNI sur ce projet pédagogique). 
 - **Branche `main`** : version vulnérable originale (ne pas modifier avec des corrections)
 - **Branche `correction`** : version sécurisée (push des corrections ici)
 - **README.md** : synchronisé sur les deux branches
+
+## Branche `ci-cd-pipeline` (Kit 2 — Pipeline de déploiement continu)
+
+Cette branche dérive de `correction` et est dédiée au cours de CI/CD. Les règles OWASP restent en vigueur, avec les ajouts suivants :
+
+### CI/CD — Règles non négociables
+- **Jamais de secret dans `.github/workflows/`** : utiliser `${{ secrets.XXX }}` et les variables d'environnement du repository.
+- **Jamais de `.env` commité** : `.env` est dans `.gitignore`, généré par GitHub Secrets ou copié manuellement sur le VPS.
+- **Build avant test** : `mvn clean compile` doit passer avant d'exécuter les tests JUnit.
+- **Tests obligatoires sur cette branche** : contrairement à `main` et `correction` (YAGNI), `ci-cd-pipeline` exige des tests automatisés (JUnit + Mockito minimum).
+- **Scan bloquant** : un échec SAST (Semgrep) ou scan d'image (Trivy) bloque le merge.
+- **Tag d'image explicite** : pas de `latest` en production, utiliser le SHA du commit ou une version sémantique.
+- **VPS minimaliste** : pas de Java 21 ni Node.js installés sur le VPS. Docker-only pour l'exécution.
+- **Pas de Certbot sans nom de domaine** : Let's Encrypt requiert un FQDN. En l'absence de domaine, utiliser un certificat auto-signé ou celui fourni par l'hébergeur.
+
+### Déploiement
+- **Staging automatique**, **production manuelle** (review obligatoire).
+- Rollback via `docker-compose down` + image précédente.
+- Healthcheck HTTP (`/actuator/health`) avant de marquer le déploiement comme réussi.
 
 ## Fichiers sensibles
 
