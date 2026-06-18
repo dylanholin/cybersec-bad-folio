@@ -152,3 +152,72 @@ jobs:
           tags: ghcr.io/${{ github.repository_owner }}/devfolio-frontend:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: Déploiement continu (SSH → VPS)
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/ci-cd-pipeline'
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+      GHCR_USER: ${{ github.repository_owner }}
+      GHCR_TOKEN: ${{ secrets.VPS_GHCR_TOKEN }}
+      PROJECT_DIR: ${{ secrets.VPS_PROJECT_DIR || '/opt/devfolio' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Déploiement sur le VPS
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          GHCR_USER: ${{ env.GHCR_USER }}
+          GHCR_TOKEN: ${{ env.GHCR_TOKEN }}
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          envs: IMAGE_TAG,GHCR_USER,GHCR_TOKEN,PROJECT_DIR
+          script: |
+            set -e
+
+            # Se placer dans le dossier du projet
+            cd "$PROJECT_DIR"
+
+            # Mettre a jour IMAGE_TAG dans .env
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$IMAGE_TAG/" .env
+
+            # Recuperer le docker-compose.staging.yml a jour
+            git fetch origin ci-cd-pipeline
+            git checkout origin/ci-cd-pipeline -- docker-compose.staging.yml
+
+            # Login GHCR pour pull les images privees
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+
+            # Pull des nouvelles images
+            docker compose -f docker-compose.staging.yml pull
+
+            # Redemarrage des conteneurs
+            docker compose -f docker-compose.staging.yml up -d
+
+            # Attendre le healthcheck du backend (max 60s)
+            echo "Verification du healthcheck backend..."
+            for i in $(seq 1 12); do
+              if curl -sf http://127.0.0.1:8080/api/actuator/health > /dev/null 2>&1; then
+                echo "Backend OK"
+                break
+              fi
+              echo "Tentative $i/12 - backend pas encore pret..."
+              sleep 5
+            done
+
+            # Verification finale
+            if ! curl -sf http://127.0.0.1:8080/api/actuator/health > /dev/null 2>&1; then
+              echo "ERREUR: backend non accessible apres 60s"
+              docker compose -f docker-compose.staging.yml logs --tail=50 backend
+              exit 1
+            fi
+
+            echo "Deploiement termine avec succes"

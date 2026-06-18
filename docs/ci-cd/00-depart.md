@@ -151,15 +151,15 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 | Phase | Statut | Détail |
 |---|---|---|
 | **Phase 1 — Infrastructure VPS** | ✅ Terminée | fail2ban, UFW, Nginx hôte, certificat auto-signé, `.env` créé |
-| **Phase 2 — Pipeline CI** | ✅ Terminée | `.github/workflows/ci.yml`, tests, Semgrep, Trivy, push GHCR — voir `docs/01-pipeline-ci.md` |
-| **Phase 3 — Tests automatisés** | En cours | JUnit + Mockito (initial), E2E à faire |
-| **Phase 4 — Déploiement continu** | À faire | SSH deploy, healthcheck, rollback |
+| **Phase 2 — Pipeline CI** | ✅ Terminée | `.github/workflows/ci.yml`, tests, Semgrep, Trivy, push GHCR — voir `docs/ci-cd/01-pipeline-ci.md` |
+| **Phase 3 — Tests automatisés** | ✅ Terminée | JUnit + Mockito (15 tests backend), Vitest (2 tests frontend) |
+| **Phase 4 — Déploiement continu** | ✅ Implémentée | Job `deploy` SSH → VPS, `docker compose pull/up`, healthcheck 60s |
 
 ---
 
 ## Prochaine étape
 
-→ **Phase 3 — Tests automatisés** : étendre la couverture de tests (E2E, testcontainers MariaDB).
-→ **Phase 4 — Déploiement continu** : SSH deploy sur le VPS via GitHub Actions.
+- **Let's Encrypt (2.8)** : sécuriser la connexion HTTPS avec un certificat valide (nécessite un nom de domaine).
+- **Tests E2E** : étendre la couverture avec Playwright ou Cypress (navigation, authentification, CRUD projets).
 
-> L'implémentation détaillée des phases terminées est documentée dans `docs/01-pipeline-ci.md`.
+> L'implémentation détaillée des phases terminées est documentée dans `docs/ci-cd/01-pipeline-ci.md`.

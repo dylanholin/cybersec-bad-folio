@@ -316,6 +316,68 @@ exit-code: '1'          # bloquant
 
 ---
 
+## Phase 4 — Déploiement continu (CD)
+
+### Objectif
+
+Après la build, le scan Trivy et le push des images sur GHCR, le job `deploy` se connecte au VPS via SSH pour mettre à jour l'application en production de manière automatique et reproductible.
+
+### Job `deploy`
+
+| Étape | Action |
+|---|---|
+| **Condition** | `if: github.ref == 'refs/heads/ci-cd-pipeline'` — ne se déclenche que sur push direct sur la branche |
+| **Dépendance** | `needs: [build-and-push]` — attend que les images soient poussées sur GHCR |
+| **Connexion SSH** | `appleboy/ssh-action@v1.2.0` avec clé privée stockée en GitHub Secret |
+| **Mise à jour IMAGE_TAG** | `sed -i` dans `.env` sur le VPS pour pointer vers le SHA du commit |
+| **Récupération compose** | `git fetch` + `git checkout` du `docker-compose.staging.yml` à jour |
+| **Login GHCR** | Authentification Docker avec un PAT (`VPS_GHCR_TOKEN`) pour pull les images privées |
+| **Pull + restart** | `docker compose pull` puis `docker compose up -d` |
+| **Healthcheck** | Boucle de 12 tentatives × 5s = 60s max sur `/actuator/health` |
+| **Rollback logs** | Si échec, affiche les 50 dernières lignes de log du backend |
+
+### GitHub Secrets requis
+
+| Secret | Description |
+|---|---|
+| `VPS_HOST` | Adresse IP du VPS (ou nom de domaine) |
+| `VPS_USER` | Utilisateur SSH (non-root) |
+| `VPS_SSH_PRIVATE_KEY` | Clé privée SSH pour la connexion |
+| `VPS_SSH_PORT` | Port SSH (défaut : 22) |
+| `VPS_PROJECT_DIR` | Chemin du projet sur le VPS (défaut : `/opt/devfolio`) |
+| `VPS_GHCR_TOKEN` | Personal Access Token GitHub avec scope `read:packages` |
+
+> **Sécurité** : Le `GITHUB_TOKEN` automatique de GitHub Actions n'est pas utilisé pour le pull depuis le VPS car il est éphémère. Un PAT dédié avec scope minimal `read:packages` est stocké en secret et transmis via `envs` de `appleboy/ssh-action` (non exposé dans les logs).
+
+### Flux de déploiement
+
+```
+push sur ci-cd-pipeline
+  → test-backend (JUnit)
+  → test-frontend (Vitest)
+  → scan-sast (Semgrep)
+  → build-and-push (Docker + Trivy + GHCR)
+  → deploy (SSH → VPS)
+      → sed IMAGE_TAG dans .env
+      → git checkout docker-compose.staging.yml
+      → docker login ghcr.io
+      → docker compose pull
+      → docker compose up -d
+      → healthcheck /actuator/health (60s max)
+      → succès ou rollback logs
+```
+
+### Volume de persistance MariaDB
+
+Le volume nommé `db_data` dans `docker-compose.staging.yml` garantit que les données de la base persistent entre les redéploiements, même si le conteneur MariaDB est supprimé et recréé.
+
+```yaml
+volumes:
+  - db_data:/var/lib/mysql  # volume nommé — persiste entre les déploiements
+```
+
+---
+
 ## Fichiers créés/modifiés
 
 | Fichier | Action | Commit |
@@ -327,7 +389,7 @@ exit-code: '1'          # bloquant
 | `frontend/package.json` | Ajout Vitest + @vue/test-utils + jsdom | `9f84d20` |
 | `frontend/vitest.config.js` | Création | `9f84d20` |
 | `frontend/src/test/basic.test.js` | Création | `9f84d20` |
-| `.github/workflows/ci.yml` | Création + corrections successives (Semgrep CLI, Buildx, Trivy v0.36.0, scanners vuln, ignore-unfixed, Node 22, actions:write) | `ca05741` + corrections |
+| `.github/workflows/ci.yml` | Création + corrections successives (Semgrep CLI, Buildx, Trivy v0.36.0, scanners vuln, ignore-unfixed, Node 22, actions:write, job deploy SSH Phase 4) | `ca05741` + corrections |
 | `backend/Dockerfile` | Ajout `apk update && apk upgrade` (fix CVE OpenSSL Alpine) | `a881045` |
 | `frontend/Dockerfile` | Node 20 → 22 + `apk update && apk upgrade` | `a881045` |
 | `docs/ci-cd/01-pipeline-ci.md` | Création + mise à jour corrections pipeline + diagramme Mermaid | `cbd22e7` + mises à jour |
