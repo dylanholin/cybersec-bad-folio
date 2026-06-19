@@ -10,11 +10,17 @@ Fichier : `.github/workflows/ci.yml`
 
 **Triggers** : `push` et `pull_request` sur la branche `ci-cd-pipeline`.
 
+> **Pour un débutant** : un trigger est l'événement qui déclenche automatiquement le pipeline. Dès que vous poussez du code (`git push`) ou ouvrez une pull request sur la branche `ci-cd-pipeline`, GitHub Actions lance une machine virtuelle éphémère (runner) qui exécute toutes les étapes décrites ci-dessous. Vous n'avez rien à faire manuellement.
+
 ---
 
 ## Jobs
 
+> **Rappel** : un job est une étape indépendante du pipeline. Chaque job s'exécute sur un runner séparé (machine virtuelle Ubuntu). Les jobs peuvent s'exécuter en parallèle ou attendre que d'autres soient terminés (`needs`).
+
 ### 1. `test-backend` — Tests backend
+
+> **Ce que fait ce job** : il télécharge le code source, installe Java 21 et Maven, compile le backend, puis exécute tous les tests unitaires. Si un test échoue, le pipeline s'arrête.
 
 - **Runner** : `ubuntu-latest`
 - **Java** : Temurin 21 (cache Maven activé)
@@ -23,12 +29,16 @@ Fichier : `.github/workflows/ci.yml`
 
 ### 2. `test-frontend` — Tests + build frontend
 
+> **Ce que fait ce job** : il installe Node 22, télécharge les dépendances npm, exécute les tests Vitest, puis construit le frontend avec Vite. Si un test échoue ou le build échoue, le pipeline s'arrête.
+
 - **Runner** : `ubuntu-latest`
 - **Node** : 22 (cache npm activé)
 - **Commandes** : `npm ci` → `npm test` → `npm run build`
 - **Frameworks** : Vitest 1.x + @vue/test-utils 2.x
 
 ### 3. `scan-sast` — Scan statique (Semgrep)
+
+> **Ce que fait ce job** : il analyse le code source à la recherche de vulnérabilités (injections SQL, XSS, mauvaises pratiques) **sans l'exécuter**. Le rapport est uploadé sur GitHub (onglet Security). Ce scan est **non-bloquant** : il génère un rapport mais n'arrête pas le pipeline.
 
 - **Outil** : Semgrep (installé via `python3 -m pip install semgrep`, config `auto`)
 - **Arguments** : `semgrep scan --config auto --sarif --output semgrep.sarif .`
@@ -37,6 +47,10 @@ Fichier : `.github/workflows/ci.yml`
 - **Sortie** : rapport SARIF uploadé via `github/codeql-action/upload-sarif@v4` (onglet Security de GitHub).
 
 ### 4. `build-and-push` — Build, scan Trivy, push GHCR
+
+> **Ce que fait ce job** : une fois les tests et le scan SAST terminés, il construit les images Docker du backend et du frontend, les scanne avec Trivy (vulnérabilités HIGH/CRITICAL = bloquant), puis les pousse sur GHCR (registre d'images GitHub). C'est l'étape qui produit les artefacts déployables.
+>
+> **Pourquoi attendre les tests ?** : pas de sens à construire une image Docker si le code ne compile pas ou si les tests échouent. Le mot-clé `needs` garantit que `build-and-push` ne démarre qu'après le succès des 3 jobs précédents.
 
 - **Dépend de** : `test-backend`, `test-frontend`, `scan-sast`
 - **Permissions** : `packages: write` (push GHCR), `contents: read` (checkout), `actions: write` (cache GHA)

@@ -12,6 +12,66 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 
 ---
 
+## Concepts CI/CD pour débutants
+
+> Cette section explique les termes fondamentaux utilisés tout au long de cette documentation. Si vous débutez en CI/CD, lisez-la avant de continuer.
+
+### Qu'est-ce que la CI/CD ?
+
+| Terme | Définition |
+|---|---|
+| **CI (Intégration Continue)** | Pratique qui consiste à vérifier automatiquement le code à chaque changement (push, pull request). Chaque modification est testée et scannée avant d'être intégrée. |
+| **CD (Déploiement Continu)** | Suite logique de la CI : une fois le code validé, il est déployé automatiquement sur le serveur cible, sans intervention manuelle. |
+
+### Vocabulaire technique
+
+| Terme | Explication simple |
+|---|---|
+| **Runner** | Machine virtuelle éphémère fournie par GitHub (ici `ubuntu-latest`). Elle exécute les tâches définies dans le workflow, puis est détruite. On n'a rien à installer ni maintenir. |
+| **Workflow** | Fichier YAML (`.github/workflows/ci.yml`) qui décrit la suite d'actions à exécuter automatiquement. C'est la "recette" du pipeline. |
+| **Job** | Étape du workflow exécutée sur un runner. Chaque job est indépendant. Dans ce projet : `test-backend`, `test-frontend`, `scan-sast`, `build-and-push`, `deploy`. |
+| **Step** | Sous-étape d'un job. Par exemple, dans le job `test-backend` : checkout du code → installation Java 21 → `mvn clean test`. |
+| **Trigger** | Événement qui déclenche le workflow. Ici : `push` (envoi de code) et `pull_request` (ouverture d'une PR) sur la branche `ci-cd-pipeline`. |
+| **Build (construction)** | Transformation du code source en artefact exécutable. Ici : compilation Java (`mvn`), build frontend (`vite build`), et construction des images Docker. |
+| **Test** | Vérification automatique que le code fonctionne comme prévu. Ici : tests unitaires JUnit (backend) et Vitest (frontend). |
+| **Scan SAST** | Static Application Security Testing : analyse du code source à la recherche de vulnérabilités sans l'exécuter. Outil utilisé : Semgrep. |
+| **Scan d'image** | Analyse d'une image Docker à la recherche de vulnérabilités connues (CVE). Outil utilisé : Trivy. |
+| **GHCR** | GitHub Container Registry : registre d'images Docker hébergé par GitHub. Équivalent de Docker Hub mais privé, accessible avec le `GITHUB_TOKEN`. |
+| **Image Docker** | Snapshot reproductible d'une application + son environnement. Construite une fois, exécutée partout. Ici : `devfolio-backend:SHA` et `devfolio-frontend:SHA`. |
+| **Déploiement** | Mise en production du code sur le serveur cible (VPS). Ici : pull des images depuis GHCR + `docker compose up -d`. |
+| **Healthcheck** | Vérification automatique que l'application démarre correctement après un déploiement. Ici : requête HTTP sur `/actuator/health` (max 60s). |
+| **Secret** | Valeur sensible (clé SSH, token, mot de passe) stockée chiffrée dans GitHub (Settings → Secrets) ou sur le VPS (`.env`). Jamais dans le code. |
+| **Artifact** | Fichier produit par le pipeline (image Docker, rapport SARIF, build frontend). |
+
+### Comment les jobs s'enchaînent
+
+```
+push sur la branche
+    │
+    ▼
+┌─────────────┐  ┌──────────────┐  ┌───────────┐
+│ test-backend │  │ test-frontend│  │ scan-sast │
+│ (JUnit)      │  │ (Vitest)     │  │ (Semgrep) │
+└──────┬───────┘  └──────┬───────┘  └─────┬─────┘
+       │                 │                │
+       └────────┬────────┘────────────────┘
+                ▼
+       ┌─────────────────┐
+       │ build-and-push   │
+       │ (Docker + Trivy  │
+       │  + push GHCR)    │
+       └────────┬─────────┘
+                ▼
+       ┌─────────────────┐
+       │ deploy           │
+       │ (SSH → VPS)      │
+       └─────────────────┘
+```
+
+> Les 3 premiers jobs s'exécutent **en parallèle**. Le job `build-and-push` attend que les 3 soient terminés (`needs`). Le job `deploy` attend que `build-and-push` soit terminé.
+
+---
+
 ## Architecture cible
 
 ```
@@ -82,8 +142,8 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 
 4. **Créer `.github/workflows/ci.yml`**
    - Checkout du code
-   - Build Maven (`mvn clean compile`) via Docker
-   - Build frontend (`npm install && npm run build`) via Docker
+   - Tests backend : `mvn clean test` (Java 21 sur runner)
+   - Build frontend : `npm ci && npm run build` (Node 22 sur runner)
    - Tests unitaires JUnit + Mockito
    - Scan SAST avec Semgrep
    - Scan d'image Docker avec Trivy
@@ -108,12 +168,12 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 
 ### Phase 4 — Déploiement continu
 
-8. **Déploiement sur le VPS**
+7. **Déploiement sur le VPS**
    - GitHub Actions se connecte au VPS via SSH (clé déployée en secret)
    - `docker compose pull && docker compose up -d` sur le VPS
    - Affichage des logs + exit 1 si healthcheck échoue
 
-9. **Monitoring et logs**
+8. **Monitoring et logs**
    - `docker logs` centralisés
    - Healthcheck HTTP sur `/actuator/health`
 

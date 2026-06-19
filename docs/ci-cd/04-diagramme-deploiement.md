@@ -42,9 +42,17 @@ graph TB
 
     CLIENT["Client (Navigateur web)"]
 
-    BUILD -->|push images| GHCR
+    REPO --> TEST_BE
+    REPO --> TEST_FE
+    REPO --> SAST
+    TEST_BE --> BUILD
+    TEST_FE --> BUILD
+    SAST --> BUILD
+    BUILD -->|push images| IMG_BE
+    BUILD -->|push images| IMG_FE
     BUILD -.->|SSH deploy Phase 4| VPS
-    GHCR -->|docker pull| DOCKER
+    IMG_BE -->|docker pull| BE
+    IMG_FE -->|docker pull| FE
     CLIENT -->|HTTPS| NGINX
     NGINX -->|proxy /api| BE
     NGINX -->|proxy /| FE
@@ -79,7 +87,7 @@ graph TB
 │  │              │    │  └─────────────┘                 │  │
 │  └──────────────┘    └──────────────────────────────────┘  │
 │                                                             │
-│  fail2ban (sshd)  │  UFW (22/80/443)                       │
+│  fail2ban (sshd)  │  UFW (22/80/443)  │  Compte `deploy` (SSH)     │
 └─────────────────────────────────────────────────────────────┘
          ▲
          │ SSH (déploiement Phase 4)

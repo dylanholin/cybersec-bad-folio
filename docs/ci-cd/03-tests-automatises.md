@@ -4,6 +4,14 @@
 
 ---
 
+> **Pour un débutant** : un test automatisé est un morceau de code qui vérifie qu'une autre partie du code fonctionne correctement. Au lieu de tester manuellement (cliquer sur l'interface, saisir des données), on écrit des tests qui s'exécutent automatiquement à chaque push. Si un test échoue, le pipeline s'arrête et le code n'est pas déployé.
+>
+> **Types de tests dans ce projet** :
+> - **Tests unitaires** : vérifient une fonction ou une classe isolément (ex : "ce token JWT est-il valide ?"). Rapides, pas de base de données.
+> - **Tests E2E (non implémentés)** : simulent un utilisateur réel qui navigue sur le site (clic, formulaire, navigation). Plus lents, nécessitent l'application complète.
+
+---
+
 ## Backend — 3 classes, 15 tests
 
 | Fichier | Tests | Couverture |

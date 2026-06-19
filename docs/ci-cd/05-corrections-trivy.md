@@ -4,6 +4,14 @@
 
 ---
 
+> **Pour un débutant** : Trivy est un outil qui scanne les images Docker à la recherche de **CVE** (Common Vulnerabilities and Exposures) — des failles de sécurité connues et référencées publiquement. Chaque CVE a un identifiant unique (ex : CVE-2025-24813), une gravité (LOW, MEDIUM, HIGH, CRITICAL) et un composant affecté (ex : Tomcat, Spring Security).
+>
+> **Pourquoi scanner ?** : une image Docker contient des dizaines de bibliothèques. Si l'une d'elles a une faille connue, un attaquant peut l'exploiter. Trivy vérifie automatiquement que les bibliothèques utilisées n'ont pas de vulnérabilités HIGH ou CRITICAL non corrigées.
+>
+> **Que faire quand Trivy trouve une CVE ?** : mettre à jour la bibliothèque concernée vers une version corrigée. C'est ce qui est décrit ci-dessous.
+
+---
+
 ## Run #4 — `buildx failed`
 
 | Problème | Cause | Fix |

@@ -4,6 +4,15 @@
 
 ---
 
+> **Pour un débutant** : un VPS (Virtual Private Server) est un serveur loué chez un hébergeur (ici Scaleway). Contrairement à votre ordinateur personnel, il est :
+> - **Public** : accessible depuis Internet 24/7 (d'où l'importance de la sécurité)
+> - **Minimaliste** : seul Docker est installé, pas de Java ni Node.js
+> - **Persistant** : il tourne même quand vous éteignez votre PC
+>
+> **Pourquoi sécuriser le VPS ?** : un serveur public est constamment ciblé par des bots (brute-force SSH, scan de ports). Les mesures ci-dessous (fail2ban, UFW, compte dédié) réduisent la surface d'attaque.
+
+---
+
 ## Sécurisation du serveur
 
 | Service | Version | Configuration |
@@ -16,9 +25,25 @@
 
 ---
 
+## Compte `deploy` dédié
+
+Un compte utilisateur `deploy` est créé lors du durcissement du serveur (voir [`docs/securite/07-durcissement-serveur.md`](../securite/07-durcissement-serveur.md)). Ce compte est utilisé par le job `deploy` de GitHub Actions pour se connecter au VPS via SSH.
+
+| Propriété | Valeur |
+|---|---|
+| **Utilisateur** | `deploy` (sans mot de passe, clé SSH uniquement) |
+| **Groupe** | `docker` (nécessaire pour `docker compose`) |
+| **Répertoire projet** | `/opt/devfolio` (propriété `deploy:deploy`) |
+| **SSH** | `AllowUsers deploy` dans `/etc/ssh/sshd_config` |
+| **sudo** | Non accordé par défaut (moindre privilège) |
+
+> Le secret GitHub `VPS_USER` doit contenir `deploy`. Voir [`06-deploiement-continu.md`](./06-deploiement-continu.md) pour le détail.
+
+---
+
 ## Nginx — Reverse proxy hôte
 
-Le conteneur frontend Docker d'origine occupait les ports 80/443. Il a été arrêté et remplacé par Nginx installé sur l'hôte :
+Le conteneur frontend Docker d'origine occupait les ports 80/443 de l'hôte. Il a été reconfiguré pour écouter sur le port 3000 (mappé sur `127.0.0.1:3000`), et Nginx a été installé sur l'hôte pour gérer le TLS et le reverse proxy :
 
 ```
 Internet (443/80)
@@ -80,7 +105,7 @@ server {
 
 ## Docker sur le VPS
 
-- **Conteneurs actifs** : backend + MariaDB sur `127.0.0.1` uniquement
+- **Conteneurs actifs** : backend, frontend et MariaDB sur `127.0.0.1` uniquement
 - **Conteneur frontend** : écoute sur `127.0.0.1:3000` (port 80 du conteneur, proxy via Nginx hôte)
 - **Réseaux isolés** : `frontend-backend`, `backend-db`
 - **Volume persistant** : `db_data` pour MariaDB
