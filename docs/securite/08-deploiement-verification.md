@@ -251,7 +251,7 @@ Si possible, faire vérifier l'exposition par une autre équipe depuis une machi
 | Rate limiting / blacklist en mémoire | INFO | Ne fonctionne pas en cluster | Redis / Bucket4j en production |
 | Pas de supervision ni sauvegarde | INFO | Aucune alerte ni restauration | Voir bonus (supervision, backups, fail2ban) |
 | Mot de passe `devfolio_app` en dur dans `init.sql` | ~~BASSE~~ | ~~`'DevfolioApp2024!'` hardcodé dans le SQL commité~~ | **Corrigé** : `init.sql` remplacé par `init-template.sql` + `init.sh` avec injection `${DB_PASSWORD}`. Fichier genere supprime immediatement apres execution. |
-| Fallback `${DB_PASSWORD:}` (chaîne vide) | INFO | `spring.datasource.password=${DB_PASSWORD:}` possède un fallback vide | Supprimer le fallback sur un secret |
+| Fallback `${DB_PASSWORD:}` (chaîne vide) | ~~INFO~~ | ~~`spring.datasource.password=${DB_PASSWORD:}` possède un fallback vide~~ | **Corrigé** : fallback supprimé, `spring.datasource.password=${DB_PASSWORD}` (sans valeur par défaut) |
 | `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | INFO | Le mot de passe root MariaDB est identique au compte applicatif | Séparer `DB_ROOT_PASSWORD` et `DB_PASSWORD` dans `.env` |
 
 > Ces risques sont de criticité **basse** ou **informationnelle** et ne sont pas bloquants pour une démonstration temporaire. Ils sont à traiter avant un déploiement en production. Voir aussi les risques restants documentés en [doc 06 §3](06-corriger-essentiel-demo.md#3-vulnérabilités-restantes) et les nouvelles vulnérabilités de code identifiées post-itération 3.
