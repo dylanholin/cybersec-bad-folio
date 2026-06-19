@@ -114,7 +114,13 @@ docker-compose up --build
 | Fichier | Contenu |
 |---------|---------|
 | `00-depart.md` | Plan et architecture cible du pipeline |
-| `01-pipeline-ci.md` | Implémentation détaillée (Phase 1 VPS + Phase 2 CI + Phase 3 tests + Phase 4 déploiement CD) |
+| `01-infrastructure-vps.md` | Phase 1 : VPS, Nginx, Docker, `.env` |
+| `02-pipeline-ci.md` | Phase 2 : Workflow GitHub Actions, jobs, secrets, tagging |
+| `03-tests-automatises.md` | Phase 3 : Tests backend (JUnit + Mockito) et frontend (Vitest) |
+| `04-diagramme-deploiement.md` | Diagramme de déploiement (Mermaid + ASCII + drawio) |
+| `05-corrections-trivy.md` | Cycle d'itération Trivy (runs #4 à #7, 36 CVE → 0) |
+| `06-deploiement-continu.md` | Phase 4 : Job deploy, SSH, healthcheck, correctifs |
+| `07-fichiers-modifies.md` | Tableau récapitulatif des fichiers créés/modifiés |
 | `diagramme-deploiement.drawio` | Diagramme UML de déploiement (diagrams.net) |
 | `diagramme-deploiement.drawio.png` | Export PNG du diagramme UML |
 

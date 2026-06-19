@@ -22,7 +22,7 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 │  ├─ Tests JUnit / Mockito           │     │  ├─ fail2ban (SSH)                │
 │  ├─ Scan SAST (Semgrep)             │     │  ├─ MariaDB (volume persistant)   │
 │  ├─ Scan image (Trivy)              │     │  └─ Application (containers)      │
-│  └─ Push images GHCR / Docker Hub   │     │                                     │
+│  └─ Push images GHCR                │     │                                     │
 └─────────────────────────────────────┘     └─────────────────────────────────────┘
 ```
 
@@ -73,7 +73,7 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
    - En-têtes de sécurité 2026 : HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
 
 3. **Préparer Docker sur le VPS**
-   - Docker 29.5.3 et Docker Compose v5.1.4 déjà installés ✅
+   - Docker 29.5.3 et Docker Compose v2.x (plugin) déjà installés ✅
    - Réseaux Docker isolés : `frontend-backend` et `backend-db`
    - Volume persistant `db_data` pour MariaDB
    - Tous les ports mappés sur `127.0.0.1` uniquement (pas d'exposition publique)
@@ -85,7 +85,6 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
    - Build Maven (`mvn clean compile`) via Docker
    - Build frontend (`npm install && npm run build`) via Docker
    - Tests unitaires JUnit + Mockito
-   - Tests d'intégration (testcontainers MariaDB)
    - Scan SAST avec Semgrep
    - Scan d'image Docker avec Trivy
    - Push des images sur GHCR (GitHub Container Registry)
@@ -105,10 +104,7 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
    - Couvrir les controllers, services, validators
    - Ne pas tester la couche JPA (utiliser `@WebMvcTest` et `@MockBean`)
 
-7. **Tests E2E frontend**
-   - Playwright ou Cypress
-   - Scénarios : login, création de projet, modification de profil
-   - Exécuter contre le backend démarré en local (testcontainers)
+> **Tests E2E (non implémentés)** : Playwright ou Cypress — scénarios login, création de projet, modification de profil. Voir section "Prochaine étape".
 
 ### Phase 4 — Déploiement continu
 
@@ -150,10 +146,10 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 
 | Phase | Statut | Détail |
 |---|---|---|
-| **Phase 1 — Infrastructure VPS** | ✅ Terminée | fail2ban, UFW, Nginx hôte, certificat auto-signé, `.env` créé |
-| **Phase 2 — Pipeline CI** | ✅ Terminée | `.github/workflows/ci.yml`, tests, Semgrep, Trivy, push GHCR — voir `docs/ci-cd/01-pipeline-ci.md` |
-| **Phase 3 — Tests automatisés** | ✅ Terminée | JUnit + Mockito (15 tests backend), Vitest (2 tests frontend) |
-| **Phase 4 — Déploiement continu** | ✅ Terminée | Job `deploy` SSH → VPS, `docker compose pull/up`, healthcheck `/actuator/health` 60s — voir `docs/ci-cd/01-pipeline-ci.md` |
+| **Phase 1 — Infrastructure VPS** | ✅ Terminée | fail2ban, UFW, Nginx hôte, certificat auto-signé, `.env` créé — voir `01-infrastructure-vps.md` |
+| **Phase 2 — Pipeline CI** | ✅ Terminée | `.github/workflows/ci.yml`, tests, Semgrep, Trivy, push GHCR — voir `02-pipeline-ci.md` |
+| **Phase 3 — Tests automatisés** | ✅ Terminée | JUnit + Mockito (15 tests backend), Vitest (2 tests frontend) — voir `03-tests-automatises.md` |
+| **Phase 4 — Déploiement continu** | ✅ Terminée | Job `deploy` SSH → VPS, `docker compose pull/up`, healthcheck `/actuator/health` 60s — voir `06-deploiement-continu.md` |
 
 ---
 
@@ -162,4 +158,4 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 - **Let's Encrypt (2.8)** : sécuriser la connexion HTTPS avec un certificat valide (nécessite un nom de domaine).
 - **Tests E2E** : étendre la couverture avec Playwright ou Cypress (navigation, authentification, CRUD projets).
 
-> L'implémentation détaillée des phases terminées est documentée dans `docs/ci-cd/01-pipeline-ci.md`.
+> L'implémentation détaillée des phases terminées est documentée dans les fichiers `01-infrastructure-vps.md` à `07-fichiers-modifies.md`.
