@@ -153,7 +153,7 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 | **Phase 1 — Infrastructure VPS** | ✅ Terminée | fail2ban, UFW, Nginx hôte, certificat auto-signé, `.env` créé |
 | **Phase 2 — Pipeline CI** | ✅ Terminée | `.github/workflows/ci.yml`, tests, Semgrep, Trivy, push GHCR — voir `docs/ci-cd/01-pipeline-ci.md` |
 | **Phase 3 — Tests automatisés** | ✅ Terminée | JUnit + Mockito (15 tests backend), Vitest (2 tests frontend) |
-| **Phase 4 — Déploiement continu** | ✅ Implémentée | Job `deploy` SSH → VPS, `docker compose pull/up`, healthcheck 60s |
+| **Phase 4 — Déploiement continu** | ✅ Terminée | Job `deploy` SSH → VPS, `docker compose pull/up`, healthcheck `/actuator/health` 60s — voir `docs/ci-cd/01-pipeline-ci.md` |
 
 ---
 

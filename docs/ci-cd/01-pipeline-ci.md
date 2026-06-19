@@ -367,6 +367,25 @@ push sur ci-cd-pipeline
       → succès ou rollback logs
 ```
 
+### Correctif healthcheck — Run #1
+
+| Problème | Cause | Fix |
+|---|---|---|
+| Backend 401 sur healthcheck | URL `/api/actuator/health` invalide en accès direct (le préfixe `/api` est ajouté par Nginx, pas par le backend) | Correction vers `/actuator/health` dans `ci.yml` et `docker-compose.staging.yml` |
+
+> Le backend Spring Boot n'a pas de `server.servlet.context-path=/api`. Le préfixe `/api` est ajouté par le reverse proxy Nginx sur l'hôte. En accès direct (`127.0.0.1:8080`), l'endpoint actuator est sur `/actuator/health` (sans `/api`).
+
+### Run #2 — Succès ✅
+
+| Résultat | Détail |
+|---|---|
+| **Status** | Success |
+| **SSH** | Connexion réussie avec clé sans passphrase |
+| **Pull** | Images `devfolio-backend` et `devfolio-frontend` tirées depuis GHCR |
+| **Conteneurs** | MariaDB healthy, backend + frontend recréés et démarrés |
+| **Healthcheck** | `Backend OK` après 2 tentatives (~10s) |
+| **Déploiement** | Terminé avec succès |
+
 ### Volume de persistance MariaDB
 
 Le volume nommé `db_data` dans `docker-compose.staging.yml` garantit que les données de la base persistent entre les redéploiements, même si le conteneur MariaDB est supprimé et recréé.
@@ -395,4 +414,4 @@ volumes:
 | `docs/ci-cd/01-pipeline-ci.md` | Création + mise à jour corrections pipeline + diagramme Mermaid | `cbd22e7` + mises à jour |
 | `docs/ci-cd/diagramme-deploiement.drawio` | Création — diagramme UML de déploiement (diagrams.net) | à commiter |
 | `docs/ci-cd/diagramme-deploiement.drawio.png` | Export PNG du diagramme UML (livrable visuel) | à commiter |
-| `docker-compose.staging.yml` | Création (Phase 1) | `3f0c687` |
+| `docker-compose.staging.yml` | Création (Phase 1) + correction healthcheck `/actuator/health` (Phase 4) | `3f0c687`, `50fd7bd` |
