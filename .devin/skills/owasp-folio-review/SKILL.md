@@ -69,8 +69,8 @@ absentes d'AGENTS.md. Vérifie qu'elles ne sont pas régressées par le diff.
 ### Infrastructure
 - `init.sql` : privilèges BDD limités (pas root), comptes par défaut avec hashes BCrypt
   (pas mots de passe en clair ni en commentaire)
-- Spring Boot parent à jour : **3.5.15** (AGENTS.md indique 3.2 — la mise à jour corrige
-  33 CVE : Tomcat, Spring Security, Spring Framework, Logback). Ne pas rétrograder.
+- Spring Boot parent à jour : **3.5.15** (corrige 33 CVE : Tomcat, Spring Security,
+  Spring Framework, Logback). Ne pas rétrograder.
 
 ## Rapporter
 
