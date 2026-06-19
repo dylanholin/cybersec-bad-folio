@@ -205,7 +205,7 @@ jobs:
             # Attendre le healthcheck du backend (max 60s)
             echo "Verification du healthcheck backend..."
             for i in $(seq 1 12); do
-              if curl -sf http://127.0.0.1:8080/api/actuator/health > /dev/null 2>&1; then
+              if curl -sf http://127.0.0.1:8080/actuator/health > /dev/null 2>&1; then
                 echo "Backend OK"
                 break
               fi
@@ -214,7 +214,7 @@ jobs:
             done
 
             # Verification finale
-            if ! curl -sf http://127.0.0.1:8080/api/actuator/health > /dev/null 2>&1; then
+            if ! curl -sf http://127.0.0.1:8080/actuator/health > /dev/null 2>&1; then
               echo "ERREUR: backend non accessible apres 60s"
               docker compose -f docker-compose.staging.yml logs --tail=50 backend
               exit 1

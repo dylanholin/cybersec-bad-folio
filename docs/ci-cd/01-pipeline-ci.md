@@ -89,7 +89,7 @@ Fichier : `.github/workflows/ci.yml`
 - **Arguments** : `semgrep scan --config auto --sarif --output semgrep.sarif .`
 - **Non-bloquant** : `continue-on-error: true` — le rapport est généré pour analyse, le pipeline ne s'arrête pas
 - **Permissions** : `contents: read`, `security-events: write` pour l'upload SARIF
-- **Sortie** : rapport SARIF uploadé via `github/codeql-action/upload-sarif@v4` (onglet Security de GitHub)
+- **Sortie** : rapport SARIF uploadé via `github/codeql-action/upload-sarif@v4` (onglet Security de GitHub).
 
 #### 4. `build-and-push` — Build, scan Trivy, push GHCR
 
