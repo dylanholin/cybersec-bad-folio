@@ -114,8 +114,8 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 
 8. **Déploiement sur le VPS**
    - GitHub Actions se connecte au VPS via SSH (clé déployée en secret)
-   - `docker-compose pull && docker-compose up -d` sur le VPS
-   - Rollback automatique si healthcheck échoue
+   - `docker compose pull && docker compose up -d` sur le VPS
+   - Affichage des logs + exit 1 si healthcheck échoue
 
 9. **Monitoring et logs**
    - `docker logs` centralisés
@@ -125,13 +125,13 @@ Le pipeline s'exécute sur **GitHub Actions** (runner `ubuntu-latest`) et déplo
 
 ## Différences avec les branches `main` et `correction`
 
-| Aspect | `main` / `correction` | `ci-cd-pipeline` |
+| Aspect | `main` | `correction` / `ci-cd-pipeline` |
 |---|---|---|
-| Objectif | Sécurité applicative (OWASP) | Pipeline de déploiement |
-| Tests | Aucun (YAGNI) | JUnit + Mockito + E2E obligatoires |
-| Doc | `docs/` pédagogique sécurité | `docs/` pédagogique CI/CD |
+| Objectif | Sécurité applicative (OWASP) | Sécurité + pipeline de déploiement |
+| Tests | Aucun (YAGNI) | JUnit + Mockito (unitaires) |
+| Doc | `docs/securite/` pédagogique sécurité | `docs/securite/` + `docs/ci-cd/` |
 | Infra | Local (Docker Desktop) | VPS cloud (Docker Engine) |
-| Déploiement | Manuel (`docker-compose up`) | Automatisé (GitHub Actions → VPS) |
+| Déploiement | Manuel (`docker compose up`) | Automatisé (GitHub Actions → VPS) |
 
 ---
 

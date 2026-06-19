@@ -191,7 +191,7 @@ jobs:
 
             # Recuperer le docker-compose.staging.yml a jour
             git fetch origin ci-cd-pipeline
-            git checkout origin/ci-cd-pipeline -- docker-compose.staging.yml
+            git checkout origin/ci-cd-pipeline -- docker-compose.staging.yml nginx.staging.conf
 
             # Login GHCR pour pull les images privees
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin

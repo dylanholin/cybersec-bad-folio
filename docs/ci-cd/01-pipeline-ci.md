@@ -330,7 +330,7 @@ Après la build, le scan Trivy et le push des images sur GHCR, le job `deploy` s
 | **Dépendance** | `needs: [build-and-push]` — attend que les images soient poussées sur GHCR |
 | **Connexion SSH** | `appleboy/ssh-action@v1.2.0` avec clé privée stockée en GitHub Secret |
 | **Mise à jour IMAGE_TAG** | `sed -i` dans `.env` sur le VPS pour pointer vers le SHA du commit |
-| **Récupération compose** | `git fetch` + `git checkout` du `docker-compose.staging.yml` à jour |
+| **Récupération fichiers** | `git fetch` + `git checkout` du `docker-compose.staging.yml` et `nginx.staging.conf` à jour |
 | **Login GHCR** | Authentification Docker avec un PAT (`VPS_GHCR_TOKEN`) pour pull les images privées |
 | **Pull + restart** | `docker compose pull` puis `docker compose up -d` |
 | **Healthcheck** | Boucle de 12 tentatives × 5s = 60s max sur `/actuator/health` |
@@ -359,7 +359,7 @@ push sur ci-cd-pipeline
   → build-and-push (Docker + Trivy + GHCR)
   → deploy (SSH → VPS)
       → sed IMAGE_TAG dans .env
-      → git checkout docker-compose.staging.yml
+      → git checkout docker-compose.staging.yml nginx.staging.conf
       → docker login ghcr.io
       → docker compose pull
       → docker compose up -d
@@ -385,6 +385,14 @@ push sur ci-cd-pipeline
 | **Conteneurs** | MariaDB healthy, backend + frontend recréés et démarrés |
 | **Healthcheck** | `Backend OK` après 2 tentatives (~10s) |
 | **Déploiement** | Terminé avec succès |
+
+### Correctif frontend nginx — Run #3
+
+| Problème | Cause | Fix |
+|---|---|---|
+| Frontend 301 Moved Permanently (site inaccessible) | Le conteneur frontend Docker redirige HTTP vers HTTPS (port 80 → 443), mais le port 443 n'est pas mappé sur l'hôte. Le Nginx hôte proxy vers `127.0.0.1:3000` (port 80) qui redirige au lieu de servir le contenu | Création de `nginx.staging.conf` (HTTP simple sans redirection TLS) monté en volume dans `docker-compose.staging.yml` |
+
+> En staging, le Nginx hôte gère déjà le TLS (certificat auto-signé). Le conteneur frontend n'a pas besoin de faire de redirection HTTP → HTTPS. `nginx.staging.conf` sert le contenu statique sur le port 80 sans TLS ni redirection.
 
 ### Volume de persistance MariaDB
 
@@ -414,4 +422,5 @@ volumes:
 | `docs/ci-cd/01-pipeline-ci.md` | Création + mise à jour corrections pipeline + diagramme Mermaid | `cbd22e7` + mises à jour |
 | `docs/ci-cd/diagramme-deploiement.drawio` | Création — diagramme UML de déploiement (diagrams.net) | à commiter |
 | `docs/ci-cd/diagramme-deploiement.drawio.png` | Export PNG du diagramme UML (livrable visuel) | à commiter |
-| `docker-compose.staging.yml` | Création (Phase 1) + correction healthcheck `/actuator/health` (Phase 4) | `3f0c687`, `50fd7bd` |
+| `docker-compose.staging.yml` | Création (Phase 1) + correction healthcheck `/actuator/health` (Phase 4) + volume mount `nginx.staging.conf` | `3f0c687`, `50fd7bd`, `bf3b51c` |
+| `nginx.staging.conf` | Création (Phase 4) : config nginx HTTP simple pour staging (sans redirection TLS) | `bf3b51c` |
