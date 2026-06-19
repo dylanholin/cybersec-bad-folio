@@ -146,6 +146,19 @@ class AuthControllerTest {
     }
 
     @Test
+    void register_shouldReturn400WhenEmailFormatInvalid() {
+        when(userRepository.findByEmail("invalid-email")).thenReturn(Optional.empty());
+        when(authService.register("invalid-email", "pass"))
+                .thenThrow(new IllegalArgumentException("Format d'email invalide"));
+
+        ResponseEntity<?> response = authController.register(
+                Map.of("email", "invalid-email", "password", "pass"));
+
+        assertEquals(400, response.getStatusCode().value());
+        assertTrue(response.getBody().toString().contains("Format d'email invalide"));
+    }
+
+    @Test
     void logout_shouldReturnOkEvenWithoutToken() {
         when(httpRequest.getHeader("Authorization")).thenReturn(null);
 

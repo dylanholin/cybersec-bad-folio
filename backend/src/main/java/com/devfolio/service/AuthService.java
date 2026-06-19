@@ -20,6 +20,9 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
 
     public User register(String email, String password) {
+        if (email == null || !email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+            throw new IllegalArgumentException("Format d'email invalide");
+        }
         if (password == null || password.length() < 12) {
             throw new IllegalArgumentException("Mot de passe trop court (12 caractères minimum)");
         }
