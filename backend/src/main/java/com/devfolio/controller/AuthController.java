@@ -83,9 +83,13 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email déjà utilisé"));
         }
 
-        User user = authService.register(email, password);
-        String token = jwtService.generateToken(user);
-        return ResponseEntity.ok(Map.of("token", token, "user", user));
+        try {
+            User user = authService.register(email, password);
+            String token = jwtService.generateToken(user);
+            return ResponseEntity.ok(Map.of("token", token, "user", user));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/reset-password/request")
