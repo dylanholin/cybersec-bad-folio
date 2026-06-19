@@ -41,7 +41,7 @@ Cette règle prime sur la rapidité d'exécution.
 
 ## Stack technique
 
-- **Backend** : Spring Boot 3.2 (Java 21), Spring Security, Spring Data JPA, JWT (jjwt 0.11.5), MariaDB JDBC 3.3.0
+- **Backend** : Spring Boot 3.5.15 (Java 21), Spring Security, Spring Data JPA, JWT (jjwt 0.11.5), MariaDB JDBC 3.3.0
 - **Frontend** : Vue 3 + Vite + Bootstrap 5 (CDN avec SRI)
 - **Base de données** : MariaDB 10.11
 - **Infrastructure** : Docker + Docker Compose
