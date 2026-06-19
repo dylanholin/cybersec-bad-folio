@@ -36,7 +36,7 @@ La documentation est organisée en deux dossiers :
 | Fichier | Contenu |
 |---------|---------|
 | `00-depart.md` | Plan et architecture cible du pipeline |
-| `01-pipeline-ci.md` | Implémentation détaillée (Phase 1 VPS + Phase 2 CI) |
+| `01-pipeline-ci.md` | Implémentation détaillée (Phase 1 VPS + Phase 2 CI + Phase 3 tests + Phase 4 déploiement CD) |
 | `diagramme-deploiement.drawio` | Diagramme UML de déploiement (diagrams.net) |
 | `diagramme-deploiement.drawio.png` | Export PNG du diagramme UML |
 
