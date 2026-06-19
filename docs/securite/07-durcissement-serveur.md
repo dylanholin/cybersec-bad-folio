@@ -268,7 +268,7 @@ sudo find / -perm -4000 -o -perm -2000 2>/dev/null
 Bonnes pratiques à vérifier/maintenir au moment du déploiement :
 
 - conteneurs **non privilégiés** (pas de `--privileged`) ;
-- conteneurs **non root** (`USER appuser` côté backend ; envisager `USER nginx` côté frontend) ;
+- conteneurs **non root** (`USER appuser` côté backend ; `USER nginx` côté frontend) ;
 - **ports internes non publiés** sur l'hôte (3306, 8080) ;
 - **volumes nommés** plutôt que bind mount de répertoires hôtes sensibles ;
 - **images minimales** (`eclipse-temurin:21-jre-alpine`, `nginx:alpine`) ;
@@ -308,7 +308,7 @@ Ressources : [Docker security](https://docs.docker.com/engine/security/) · [OWA
 | Membres du groupe `docker` | MOYENNE | Accès quasi-root via Docker | Limiter le nombre de membres, surveiller l'accès SSH |
 | Certificat HTTPS auto-signé | INFO | Avertissement navigateur en démo | Let's Encrypt en production |
 | Pas de supervision / sauvegarde | INFO | Aucune alerte ni restauration en cas d'incident | Voir bonus (supervision, backups) |
-| Pas de bannissement automatique | BASSE | Brute force SSH non bloqué dynamiquement | Ajouter `fail2ban` (bonus) |
+| Pas de bannissement automatique | ~~BASSE~~ | ~~Brute force SSH non bloqué dynamiquement~~ | **Corrigé** : `fail2ban` installé (jail sshd, `bantime = 3600`, `maxretry = 3` — cf. `01-infrastructure-vps.md`). |
 | Mot de passe `devfolio_app` en dur dans `init.sql` | ~~BASSE~~ | ~~`'DevfolioApp2024!'` hardcodé dans le SQL commité~~ | **Corrigé** : `init.sql` remplacé par `init-template.sql` + `init.sh` avec injection `${DB_PASSWORD}`. Fichier genere supprime immediatement apres execution. |
 | `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | INFO | Le mot de passe root MariaDB est identique au compte applicatif dans `docker-compose.yml` | Séparer `DB_ROOT_PASSWORD` et `DB_PASSWORD` dans `.env` |
 

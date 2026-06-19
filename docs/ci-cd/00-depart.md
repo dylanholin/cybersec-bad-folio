@@ -208,7 +208,7 @@ push sur la branche
 |---|---|---|
 | **Phase 1 — Infrastructure VPS** | ✅ Terminée | fail2ban, UFW, Nginx hôte, certificat auto-signé, `.env` créé — voir `01-infrastructure-vps.md` |
 | **Phase 2 — Pipeline CI** | ✅ Terminée | `.github/workflows/ci.yml`, tests, Semgrep, Trivy, push GHCR — voir `02-pipeline-ci.md` |
-| **Phase 3 — Tests automatisés** | ✅ Terminée | JUnit + Mockito (15 tests backend), Vitest (2 tests frontend) — voir `03-tests-automatises.md` |
+| **Phase 3 — Tests automatisés** | ✅ Terminée | JUnit + Mockito (16 tests backend), Vitest (2 tests frontend) — voir `03-tests-automatises.md` |
 | **Phase 4 — Déploiement continu** | ✅ Terminée | Job `deploy` SSH → VPS, `docker compose pull/up`, healthcheck `/actuator/health` 60s — voir `06-deploiement-continu.md` |
 
 ---

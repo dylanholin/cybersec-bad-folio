@@ -106,8 +106,8 @@ ss -tulpn
 
 ### 4.3 Questions de durcissement Docker à se poser
 
-- Le conteneur tourne-t-il en root ? → backend `appuser` ; envisager `USER nginx` côté frontend (risque restant connu, cf. doc 06).
-- Tous les ports exposés sont-ils nécessaires ? → seuls 80/443 doivent être publics. 8080 ne doit pas être publié sur `0.0.0.0` (risque restant doc 06 : à binder sur `127.0.0.1` ou supprimer).
+- Le conteneur tourne-t-il en root ? → backend `appuser` ; `USER nginx` côté frontend (corrigé, cf. doc 06).
+- Tous les ports exposés sont-ils nécessaires ? → seuls 80/443 sont publics. 8080 bindé sur `127.0.0.1` (corrigé, cf. doc 06).
 - Les volumes montés sont-ils raisonnables ? → uniquement `db_data` (nommé) et les fichiers d'init (`init.sh`, `init-template.sql`) en lecture seule dans `/docker-entrypoint-initdb.d/`.
 - Des secrets apparaissent-ils dans les variables d'environnement ? → injectés via `env_file`, jamais en dur dans le YAML.
 - Les images sont-elles récentes et minimales ? → `eclipse-temurin:21-jre-alpine`, `nginx:alpine`, `mariadb:10.11`.
@@ -245,8 +245,8 @@ Si possible, faire vérifier l'exposition par une autre équipe depuis une machi
 
 | Risque | Criticité | Détail | Action recommandée |
 |--------|-----------|--------|--------------------|
-| Backend 8080 publié sur `0.0.0.0` | BASSE | Accessible sans passer par nginx | Binder `127.0.0.1:8080` ou supprimer le mapping |
-| Frontend nginx en root | BASSE | Image `nginx:alpine` root par défaut | Ajouter `USER nginx` au Dockerfile |
+| Backend 8080 publié sur `0.0.0.0` | ~~BASSE~~ | ~~Accessible sans passer par nginx~~ | **Corrigé** : bind `127.0.0.1:8080:8080` dans `docker-compose.yml` et `docker-compose.staging.yml`. |
+| Frontend nginx en root | ~~BASSE~~ | ~~Image `nginx:alpine` root par défaut~~ | **Corrigé** : `USER nginx` dans `frontend/Dockerfile` + permissions sur cache/log/ssl. |
 | Certificat auto-signé | INFO | Avertissement navigateur | Let's Encrypt en production |
 | Rate limiting / blacklist en mémoire | INFO | Ne fonctionne pas en cluster | Redis / Bucket4j en production |
 | Pas de supervision ni sauvegarde | INFO | Aucune alerte ni restauration | Voir bonus (supervision, backups, fail2ban) |

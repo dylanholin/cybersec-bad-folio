@@ -12,7 +12,7 @@ Ce document constitue le livrable de la deuxième journée. Il s'appuie sur l'au
 
 ### Analyse de la veille
 
-L'audit initial (Jour 1) a identifié **41 vulnérabilités** réparties sur les 10 catégories OWASP Top 10 2025, plus **9 problèmes d'infrastructure** (DEV-xx). Le code source sur la branche `main` contenait des marqueurs 🔴 signalant chaque problème.
+L'audit initial (Jour 1) a identifié **41 vulnérabilités** réparties sur les 10 catégories OWASP Top 10 2025, plus **10 problèmes d'infrastructure** (DEV-xx). Le code source sur la branche `main` contenait des marqueurs 🔴 signalant chaque problème.
 
 ### Priorisation mise à jour
 
@@ -165,7 +165,7 @@ Ces éléments ont été découverts lors d'une revue de code complémentaire et
 | NEW-01 | Mot de passe `devfolio_app` en dur dans `init.sql` | ~~BASSE~~ | ~~`'DevfolioApp2024!'` est hardcodé dans le script SQL commité~~ | **Corrigé** : `init.sql` remplacé par `init-template.sql` + `init.sh`. Le mot de passe applicatif est injecté via `${DB_PASSWORD}` au premier demarrage MariaDB. Le fichier genere est supprime immediatement apres execution. |
 | NEW-02 | DNS rebinding possible sur `UrlValidator` | BASSE | La résolution DNS (`InetAddress.getByName`) et la requête HTTP (`openStream`) ne sont pas atomiques. Un attaquant peut faire pointer un domaine autorisé vers une IP privée entre les deux opérations. | À corriger — valider l'IP au moment de la connexion socket |
 | NEW-03 | Mass assignment partiel sur `ProjectController.updateProject()` | ~~BASSE~~ | ~~`@RequestBody Project` permet de modifier `isPublic` (visibilité) sans validation métier. Le DTO `UserUpdateRequest` existe côté `UserController` mais pas pour les projets.~~ | **Corrigé** : `ProjectCreateRequest` et `ProjectUpdateRequest` créés (sans `id`, sans `ownerId`). Le serveur construit manuellement l'entity `Project` à partir des DTOs. `ownerId` est contrôlé exclusivement par `authentication.getDetails()`. `isPublic` modifiable uniquement via le DTO autorisé. |
-| NEW-04 | Pas de validation du format email côté serveur | INFO | `AuthService.register()` ne vérifie pas que l'email est un format RFC 5322 valide. | À corriger — ajouter `@jakarta.validation.constraints.Email` ou regex |
+| NEW-04 | ~~Pas de validation du format email côté serveur~~ | ~~INFO~~ | ~~`AuthService.register()` ne vérifie pas que l'email est un format RFC 5322 valide.~~ | **Corrigé** : validation regex dans `AuthService.register()` + try-catch 400 dans `AuthController.register()`. |
 | NEW-05 | ~~Fallback `${DB_PASSWORD:}` (chaîne vide)~~ | ~~INFO~~ | ~~`spring.datasource.password=${DB_PASSWORD:}` possède un fallback vide. Bien que cela provoque un échec de connexion bruyant, un fallback sur un secret est une mauvaise pratique.~~ | **Corrigé** : fallback supprimé, `spring.datasource.password=${DB_PASSWORD}` (sans valeur par défaut). |
 | NEW-06 | `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | INFO | Dans `docker-compose.yml`, le mot de passe root MariaDB est identique au mot de passe du compte applicatif. | À corriger — séparer `DB_ROOT_PASSWORD` et `DB_PASSWORD` dans `.env` |
 
@@ -213,7 +213,7 @@ Ce sont des défenses en profondeur. Le rate limiting ne protège que contre le 
 | 443 | HTTPS | Public (seul port public) | [x] Configuré |
 | 3306 | MariaDB | **Aucun** accès extérieur | [x] 127.0.0.1 uniquement |
 | 5005 | Debug JVM | **Aucun** | [x] Supprimé |
-| 8080 | Backend | Via nginx reverse proxy | [ ] Restreindre à 127.0.0.1 en production |
+| 8080 | Backend | Via nginx reverse proxy | [x] Restreint à `127.0.0.1` |
 
 ### Dépendances requises
 
@@ -306,7 +306,7 @@ L'application est dans un état **acceptable pour une démonstration temporaire*
 - HTTPS + en-têtes de sécurité nginx
 - Rate limiting + invalidation serveur des tokens
 
-Les risques résiduels (basse criticité) sont liés à des limitations d'architecture en mémoire (rate limiting, blacklist) et des ajustements de configuration mineurs (port 8080, certificat auto-signé). Ils ne sont pas bloquants pour une démo et seront traités avant la production.
+Les risques résiduels (basse criticité) sont liés à des limitations d'architecture en mémoire (rate limiting, blacklist) et au certificat auto-signé. Ils ne sont pas bloquants pour une démo et seront traités avant la production.
 
 ---
 

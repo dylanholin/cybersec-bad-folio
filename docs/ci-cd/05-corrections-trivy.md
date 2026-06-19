@@ -56,7 +56,7 @@ Trivy a remonté **3 CVE Alpine** + **33 CVE Java** (27 HIGH, 6 CRITICAL).
 | Résultat | Détail |
 |---|---|
 | **Status** | Success (3m 16s) |
-| **Tests backend** | 15 tests JUnit passés |
+| **Tests backend** | 16 tests JUnit passés |
 | **Tests frontend** | Vitest + build passés |
 | **Semgrep** | Scan SAST complété, SARIF uploadé |
 | **Trivy backend** | 0 vulnérabilités HIGH/CRITICAL |

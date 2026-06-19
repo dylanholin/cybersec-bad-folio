@@ -12,13 +12,13 @@
 |---|--------------|-----------|------------|
 | 1 | JWT `alg:none` | A07-01 | `parseClaimsJws()` exclusivement, suppression du fallback `parseUnsignedClaims()` |
 | 2 | Injection SQL | A03-01 | Requêtes JPA paramétrées (`@Query` + `:param`) |
-| 3 | XSS stockée (bio profil) | A04-01 | Interpolation Vue `{{ }}` au lieu de `v-html` |
+| 3 | XSS stockée (bio profil) | A03-02 | Interpolation Vue `{{ }}` au lieu de `v-html` |
 | 4 | SSRF (avatar) | A10-01 | `UrlValidator` : whitelist domaines + HTTPS + blocage IP privées |
-| 5 | IDOR (projets) | A01-01 | Vérification propriétaire + `hasRole("ADMIN")` |
-| 6 | Élévation de privilèges | A01-02 | Vérification rôle côté serveur, pas seulement client |
+| 5 | IDOR (projets) | A01-02 | Vérification propriétaire + `hasRole("ADMIN")` |
+| 6 | Élévation de privilèges | A01-04 | Vérification rôle côté serveur, pas seulement client |
 | 7 | Hash MD5 mots de passe | A02-01 | BCrypt avec sel automatique |
-| 8 | Mots de passe dans réponses JSON | A07-02 | `@JsonProperty(access = WRITE_ONLY)` sur `password` |
-| 9 | Fallback secret JWT hardcodé | A07-03 | Suppression du fallback, `@Value("${jwt.secret}")` sans défaut |
+| 8 | Mots de passe dans réponses JSON | A02-01b | `@JsonIgnore` sur `password` |
+| 9 | Fallback secret JWT hardcodé | A02-03 | Suppression du fallback, `@Value("${jwt.secret}")` sans défaut |
 | 10 | Logout côté client uniquement | A07-05 | `TokenBlacklistService` (SHA-256) + endpoint `POST /api/auth/logout` |
 | 11 | CDN Bootstrap sans SRI | A08-01 | Attributs `integrity` + `crossorigin="anonymous"` |
 | 12 | Pas de CSP / en-têtes sécurité | A05-05 | En-têtes nginx : CSP, X-Content-Type-Options, X-Frame-Options, HSTS, Referrer-Policy |
@@ -39,19 +39,19 @@
 
 | # | Problème | Correction |
 |---|----------|------------|
-| 22 | MariaDB sur `0.0.0.0` | Bind `127.0.0.1:3306` |
-| 23 | Root BDD sans compte applicatif | Utilisateur `devfolio_app` (SELECT/INSERT/UPDATE/DELETE) |
-| 24 | Pas de réseau Docker isolé | Réseaux `frontend-backend` + `backend-db` |
-| 25 | Bind mount BDD | Volume nommé `db_data` |
-| 26 | Secrets en dur docker-compose | `env_file: .env` |
-| 27 | Image complète + root + debug JVM | `eclipse-temurin:21-jre-alpine`, `USER appuser`, port 5005 supprimé |
-| 28 | Pas de .dockerignore | Création `backend/.dockerignore` |
-| 29 | Pas de healthcheck MariaDB | Healthcheck + `condition: service_healthy` |
-| 30 | Pas d'en-têtes sécurité nginx | X-Content-Type-Options, X-Frame-Options, CSP, HSTS, Referrer-Policy |
-| 31 | Port backend 8080 sur `0.0.0.0` | Bind `127.0.0.1:8080` |
-| 32 | Frontend nginx en root | `USER nginx` + `apk add openssl` + permissions cache/log |
-| 33 | Pas de .gitattributes | Création (LF forcé sur scripts/Dockerfile) |
-| 34 | Pas de .env.example | Création (template sans valeurs) |
+| 25 | MariaDB sur `0.0.0.0` | Bind `127.0.0.1:3306` |
+| 26 | Root BDD sans compte applicatif | Utilisateur `devfolio_app` (SELECT/INSERT/UPDATE/DELETE) |
+| 27 | Pas de réseau Docker isolé | Réseaux `frontend-backend` + `backend-db` |
+| 28 | Bind mount BDD | Volume nommé `db_data` |
+| 29 | Secrets en dur docker-compose | `env_file: .env` |
+| 30 | Image complète + root + debug JVM | `eclipse-temurin:21-jre-alpine`, `USER appuser`, port 5005 supprimé |
+| 31 | Pas de .dockerignore | Création `backend/.dockerignore` |
+| 32 | Pas de healthcheck MariaDB | Healthcheck + `condition: service_healthy` |
+| 33 | Pas d'en-têtes sécurité nginx | X-Content-Type-Options, X-Frame-Options, CSP, HSTS, Referrer-Policy |
+| 34 | Port backend 8080 sur `0.0.0.0` | Bind `127.0.0.1:8080` |
+| 35 | Frontend nginx en root | `USER nginx` + `apk add openssl` + permissions cache/log |
+| 36 | Pas de .gitattributes | Création (LF forcé sur scripts/Dockerfile) |
+| 37 | Pas de .env.example | Création (template sans valeurs) |
 
 ---
 
@@ -134,12 +134,12 @@ Internet → [UFW: 80/443] → nginx (frontend, USER nginx)
 | Rate limiting en mémoire | INFO | Redis ou Bucket4j en production |
 | Token blacklist en mémoire | INFO | Redis avec TTL en production |
 | Pas de supervision ni sauvegarde | INFO | Netdata/Prometheus + `mysqldump` périodique |
-| Pas de bannissement brute force | BASSE | `fail2ban` sur SSH |
+| Pas de bannissement brute force | ~~BASSE~~ | ~~Brute force SSH non bloqué dynamiquement~~ | **Corrigé** : `fail2ban` installé (jail sshd, `bantime = 3600`, `maxretry = 3`). |
 | `esbuild` ≤ 0.28.0 (via Vite 5) | INFO | Vulnérabilité **dev uniquement** (serveur de dev local) — pas d'impact en production (build conteneurisé). Mise à jour vers Vite 8 en cas de changement majeur. |
 | Mot de passe `devfolio_app` en dur dans `init.sql` | ~~BASSE~~ | ~~`'DevfolioApp2024!'` est hardcodé dans le script SQL commité~~ | **Corrigé** : `init.sql` remplacé par `init-template.sql` + `init.sh` avec injection `${DB_PASSWORD}`. Fichier genere supprime immediatement apres execution. |
 | DNS rebinding possible sur `UrlValidator` | BASSE | La résolution DNS et la requête HTTP ne sont pas atomiques. Valider l'IP au moment de la connexion socket. |
 | Mass assignment partiel sur `ProjectController.updateProject()` | ~~BASSE~~ | ~~`@RequestBody Project` permet de modifier `isPublic`. Créer un DTO `ProjectUpdateRequest` avec champs contrôlés.~~ | **Corrigé** : DTOs `ProjectCreateRequest` et `ProjectUpdateRequest` créés. Champs contrôlés (pas d'`id`, pas d'`ownerId`). Construction manuelle de l'entity côté serveur. |
-| Pas de validation du format email côté serveur | INFO | `AuthService.register()` ne vérifie pas le format email. Ajouter `@Email` ou regex. |
+| Pas de validation du format email côté serveur | ~~INFO~~ | ~~`AuthService.register()` ne vérifie pas le format email.~~ | **Corrigé** : validation regex dans `AuthService.register()` + try-catch 400 dans `AuthController.register()`. |
 | Fallback `${DB_PASSWORD:}` (chaîne vide) | ~~INFO~~ | ~~`spring.datasource.password=${DB_PASSWORD:}` possède un fallback vide.~~ | **Corrigé** : fallback supprimé, `spring.datasource.password=${DB_PASSWORD}` (sans valeur par défaut). |
 | `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | INFO | Mot de passe root MariaDB identique au compte applicatif. Séparer `DB_ROOT_PASSWORD` et `DB_PASSWORD`. |
 
@@ -154,8 +154,8 @@ Internet → [UFW: 80/443] → nginx (frontend, USER nginx)
 | Code sécurisé | Branche `correction` du dépôt |
 | Code vulnérable (démonstration) | Branche `main` du dépôt |
 | Scripts de durcissement et déploiement | `hardening.sh`, `deploy.sh` |
-| Documentation technique | `docs/00` à `docs/08` |
-| Présent résultat | `docs/09-resultat.md` |
+| Documentation technique | `docs/securite/00` à `docs/securite/09` et `docs/ci-cd/00` à `docs/ci-cd/07` |
+| Présent résultat | `docs/securite/09-resultat.md` |
 | Serveur déployé et durci | Serveur distant (accès SSH + HTTPS) |
 
 ---

@@ -34,7 +34,7 @@ Un compte utilisateur `deploy` est créé lors du durcissement du serveur (voir 
 | **Utilisateur** | `deploy` (sans mot de passe, clé SSH uniquement) |
 | **Groupe** | `docker` (nécessaire pour `docker compose`) |
 | **Répertoire projet** | `/opt/devfolio` (propriété `deploy:deploy`) |
-| **SSH** | `AllowUsers deploy` dans `/etc/ssh/sshd_config` |
+| **SSH** | `AllowUsers deploy debian` dans `/etc/ssh/sshd_config` |
 | **sudo** | Non accordé par défaut (moindre privilège) |
 
 > Le secret GitHub `VPS_USER` doit contenir `deploy`. Voir [`06-deploiement-continu.md`](./06-deploiement-continu.md) pour le détail.
@@ -119,7 +119,6 @@ Créé manuellement sur le VPS (non versionné, dans `.gitignore`) :
 
 | Variable | Description |
 |---|---|
-| `DB_ROOT_PASSWORD` | Mot de passe root MariaDB |
 | `DB_NAME` | Nom de la base de données |
 | `DB_USER` / `DB_PASSWORD` | Utilisateur applicatif MariaDB |
 | `JWT_SECRET` | Secret JWT (48 caractères base64, généré via `openssl rand -base64 48`) |
