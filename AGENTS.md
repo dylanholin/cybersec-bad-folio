@@ -63,20 +63,21 @@ cybersec-bad-folio/
 │   └── src/main/java/com/devfolio/
 │       ├── config/               # SecurityConfig, JwtAuthenticationFilter
 │       ├── controller/           # Auth, User, Project, Search, Avatar
-│       ├── service/              # AuthService, JwtService, ProjectService
+│       ├── service/              # AuthService, JwtService, ProjectService, RateLimitService, TokenBlacklistService
 │       ├── model/                # User, Project
 │       ├── repository/           # JPA Repositories
 │       └── util/                 # UrlValidator (SSRF)
 │   └── src/main/resources/
 │       └── application.properties # Configuration Spring (durcie)
-└── docs/                         # Documentation du cours CI/CD
-    └── 00-depart.md              # Plan du pipeline et architecture cible
+└── docs/                         # Documentation du └── docs/                         # Documentation pédagogique
+    ├── securite/                 # Kit 1 : audit + corrections OWASP (00-09)
+    └── ci-cd/                    # Kit 2 : pipeline CI/CD (00-08)
 ├── frontend/
 │   ├── index.html                # Bootstrap CDN avec SRI
 │   ├── nginx.conf                # Reverse proxy + en-têtes sécurité
 │   ├── package.json              # Dépendances npm
 │   └── src/
-│       ├── views/                # Vue components (ProfileView.vue = XSS)
+│       ├── views/                # Vue components (ProfileView.vue — XSS corrigée sur `correction` et `ci-cd-pipeline`)
 │       ├── stores/               # Pinia (auth.js — JWT sessionStorage)
 │       ├── services/             # API client (axios)
 │       └── router/               # Vue Router
@@ -209,7 +210,7 @@ Cette branche dérive de `correction` et est dédiée au cours de CI/CD. Les rè
 - **Jamais de `.env` commité** : `.env` est dans `.gitignore`, généré par GitHub Secrets ou copié manuellement sur le VPS.
 - **Build avant test** : `mvn clean compile` doit passer avant d'exécuter les tests JUnit.
 - **Tests obligatoires sur cette branche** : contrairement à `main` et `correction` (YAGNI), `ci-cd-pipeline` exige des tests automatisés (JUnit + Mockito minimum).
-- **Scan bloquant** : un échec SAST (Semgrep) ou scan d'image (Trivy) bloque le merge.
+- **Scan bloquant (Trivy uniquement)** : un échec Trivy (vulnérabilités HIGH/CRITICAL sur les images Docker) bloque le pipeline. Semgrep (SAST) est non-bloquant par design : `continue-on-error: true`, le rapport SARIF est uploadé pour analyse dans l'onglet Security de GitHub.
 - **Tag d'image explicite** : pas de `latest` en production, utiliser le SHA du commit ou une version sémantique.
 - **VPS minimaliste** : pas de Java 21 ni Node.js installés sur le VPS. Docker-only pour l'exécution.
 - **Pas de Certbot sans nom de domaine** : Let's Encrypt requiert un FQDN. En l'absence de domaine, utiliser un certificat auto-signé ou celui fourni par l'hébergeur.
@@ -217,7 +218,7 @@ Cette branche dérive de `correction` et est dédiée au cours de CI/CD. Les rè
 - **Message de commit anodin** : pas de mention de secret, d'IP, ou de mot de passe.
 
 ### Déploiement
-- **Staging automatique**, **production manuelle** (review obligatoire).
+- **Déploiement automatique sur le VPS (production)** : le job `deploy` se déclenche automatiquement sur push sur `ci-cd-pipeline`. Un seul environnement de déploiement (VPS avec certificat auto-signé, pas de nom de domaine). Pas de staging séparé ni de review manuelle dans ce projet pédagogique.
 - Rollback via `docker-compose down` + image précédente.
 - Healthcheck HTTP (`/actuator/health`) avant de marquer le déploiement comme réussi.
 
