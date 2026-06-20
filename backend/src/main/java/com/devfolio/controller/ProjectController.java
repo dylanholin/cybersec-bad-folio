@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
@@ -86,8 +85,7 @@ public class ProjectController {
     @PostMapping("/import")
     public ResponseEntity<?> importFromGithub(@RequestParam String githubUrl) {
         try {
-            URL url = UrlValidator.validate(githubUrl);
-            try (InputStream in = url.openStream()) {
+            try (InputStream in = UrlValidator.fetchContent(githubUrl)) {
                 String content = new String(in.readNBytes((int) UrlValidator.getMaxFetchSize()));
                 return ResponseEntity.ok(Map.of("content", content));
             }
