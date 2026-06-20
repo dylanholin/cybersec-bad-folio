@@ -80,11 +80,28 @@ graph TB
 
 ## Démarrage
 
+### Développement local
+
 ```bash
 cp .env.example .env   # Éditer .env avec vos propres valeurs
 # Important : en production, définir CORS_ALLOWED_ORIGINS=https://<votre-domaine>
 docker-compose up --build
 ```
+
+> **Guide détaillé** (prérequis Docker, champs `.env` obligatoires, ports, dépannage) : voir [docs/installation-pas-a-pas.md](docs/installation-pas-a-pas.md#développement-local-sans-vps)
+
+### Déploiement sur un VPS (production)
+
+Deux scripts automatisent le déploiement initial sur un VPS Debian/Ubuntu :
+
+| Script | Rôle | Quand | Exécuté par |
+|--------|------|-------|-------------|
+| `hardening.sh` | Durcit le serveur (SSH, UFW, fail2ban, DOCKER-USER, utilisateur `deploy`) | Une seule fois, avant le premier déploiement | `root` (via `sudo`) |
+| `deploy.sh` | Clone le repo, crée `.env`, build et démarre les conteneurs | Une seule fois, après `hardening.sh` | `deploy` (pas root) |
+
+Après le déploiement initial, le pipeline CI/CD (`.github/workflows/ci.yml`) prend le relais : à chaque push sur `ci-cd-pipeline`, les images sont construites, scannées par Trivy, poussées sur GHCR, puis déployées automatiquement sur le VPS via SSH.
+
+> **Guide détaillé pas à pas** (prérequis, commandes, dépannage) : voir [docs/installation-pas-a-pas.md](docs/installation-pas-a-pas.md)
 
 ### Branche `correction` / `ci-cd-pipeline` (sécurisée)
 
@@ -98,6 +115,12 @@ docker-compose up --build
 - Backend API : `http://localhost:8080/api`
 
 ## Documentation
+
+### `docs/installation-pas-a-pas.md` : Guide d'installation
+
+| Fichier | Contenu |
+|---------|---------|
+| `installation-pas-a-pas.md` | Déploiement complet sur un VPS Debian/Ubuntu (prérequis, 5 étapes, dépannage) |
 
 ### `docs/securite/` : Sécurisation OWASP (Kit 1)
 
