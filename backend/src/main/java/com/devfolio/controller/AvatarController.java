@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.Base64;
 import java.util.Map;
 
@@ -17,8 +16,7 @@ public class AvatarController {
     @PostMapping("/avatar")
     public ResponseEntity<?> setAvatarFromUrl(@RequestParam String url) {
         try {
-            URL avatarUrl = UrlValidator.validate(url);
-            try (InputStream in = avatarUrl.openStream()) {
+            try (InputStream in = UrlValidator.fetchContent(url)) {
                 byte[] imageData = in.readNBytes((int) UrlValidator.getMaxFetchSize());
                 String base64 = Base64.getEncoder().encodeToString(imageData);
                 return ResponseEntity.ok(Map.of("avatar", "data:image/png;base64," + base64));

@@ -7,32 +7,27 @@ import static org.junit.jupiter.api.Assertions.*;
 class UrlValidatorTest {
 
     @Test
-    void validate_shouldAcceptAllowedHttpsHost() {
-        assertNotNull(UrlValidator.validate("https://github.com/user/repo"));
+    void fetchContent_shouldRejectHttpUrl() {
+        assertThrows(IllegalArgumentException.class,
+                () -> UrlValidator.fetchContent("http://github.com/user/repo"));
     }
 
     @Test
-    void validate_shouldRejectHttpUrl() {
+    void fetchContent_shouldRejectUnknownHost() {
         assertThrows(IllegalArgumentException.class,
-                () -> UrlValidator.validate("http://github.com/user/repo"));
+                () -> UrlValidator.fetchContent("https://evil.com/image.png"));
     }
 
     @Test
-    void validate_shouldRejectUnknownHost() {
+    void fetchContent_shouldRejectMetadataIp() {
         assertThrows(IllegalArgumentException.class,
-                () -> UrlValidator.validate("https://evil.com/image.png"));
+                () -> UrlValidator.fetchContent("https://169.254.169.254/latest/meta-data/"));
     }
 
     @Test
-    void validate_shouldRejectMetadataIp() {
+    void fetchContent_shouldRejectMalformedUrl() {
         assertThrows(IllegalArgumentException.class,
-                () -> UrlValidator.validate("https://169.254.169.254/latest/meta-data/"));
-    }
-
-    @Test
-    void validate_shouldRejectMalformedUrl() {
-        assertThrows(IllegalArgumentException.class,
-                () -> UrlValidator.validate("not-a-url"));
+                () -> UrlValidator.fetchContent("not-a-url"));
     }
 
     @Test
