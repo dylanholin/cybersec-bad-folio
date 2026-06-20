@@ -1,4 +1,4 @@
-# Phase 1 — Infrastructure VPS
+# Phase 1 : Infrastructure VPS
 
 > Préparation du serveur de production. Le plan initial est dans [`00-depart.md`](./00-depart.md).
 
@@ -41,7 +41,7 @@ Un compte utilisateur `deploy` est créé lors du durcissement du serveur (voir 
 
 ---
 
-## Nginx — Reverse proxy hôte
+## Nginx : Reverse proxy hôte
 
 Le conteneur frontend Docker d'origine occupait les ports 80/443 de l'hôte. Il a été reconfiguré pour écouter sur le port 3000 (mappé sur `127.0.0.1:3000`), et Nginx a été installé sur l'hôte pour gérer le TLS et le reverse proxy :
 

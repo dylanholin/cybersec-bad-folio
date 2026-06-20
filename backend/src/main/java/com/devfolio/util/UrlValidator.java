@@ -65,7 +65,7 @@ public final class UrlValidator {
 
         // SNI : SSLSocketFactory custom qui préserve le hostname original
         // pour que le serveur TLS présente le bon certificat.
-        // HttpsURLConnection n'expose pas getSSLParameters()/setSSLParameters() —
+        // HttpsURLConnection n'expose pas getSSLParameters()/setSSLParameters(),
         // la seule façon de configurer SNI est via un SSLSocketFactory custom.
         conn.setSSLSocketFactory(createSniSocketFactory(host));
 

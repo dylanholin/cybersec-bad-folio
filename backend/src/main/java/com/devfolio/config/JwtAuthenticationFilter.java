@@ -35,7 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
         String uri = request.getRequestURI();
         String method = request.getMethod();
-        log.debug("[JWT Filter] {} {} — Auth header: {}", method, uri,
+        log.debug("[JWT Filter] {} {} : Auth header: {}", method, uri,
                 request.getHeader("Authorization") != null ? "present" : "absent");
 
         String header = request.getHeader("Authorization");

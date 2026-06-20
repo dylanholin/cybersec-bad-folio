@@ -131,7 +131,7 @@ curl -ks -X POST https://localhost/api/auth/login \
 
 Depuis une autre machine du réseau : remplacer `localhost` par l'IP/nom du serveur et vérifier que **seuls** 80/443 répondent.
 
-Avec des entrées inhabituelles (régressions de sécurité) — réutiliser les tests de la [doc 06 §5](06-corriger-essentiel-demo.md#5-checklist-de-préparation-au-déploiement) :
+Avec des entrées inhabituelles (régressions de sécurité). Réutiliser les tests de la [doc 06 §5](06-corriger-essentiel-demo.md#5-checklist-de-préparation-au-déploiement) :
 
 | Test | Requête | Attendu |
 |------|---------|---------|
@@ -217,8 +217,8 @@ Chercher à identifier :
 - des **ports oubliés** (services lancés automatiquement par un paquet installé) ;
 - des **services de debug** (port 5005, actuator non protégé) ;
 - des **interfaces d'administration** exposées (`/actuator/**`, console BDD) ;
-- des **messages d'erreur trop détaillés** (stacktraces — doit être `include-stacktrace=never`) ;
-- des **informations sensibles** (versions logicielles dans les en-têtes, hashes dans le JSON — neutralisés par `@JsonIgnore`) ;
+- des **messages d'erreur trop détaillés** (stacktraces, doit être `include-stacktrace=never`) ;
+- des **informations sensibles** (versions logicielles dans les en-têtes, hashes dans le JSON, neutralisés par `@JsonIgnore`) ;
 - des **services qui ne devraient écouter qu'en local** (MariaDB).
 
 ### 5.5 Revue croisée
@@ -281,7 +281,7 @@ Si possible, faire vérifier l'exposition par une autre équipe depuis une machi
 
 ---
 
-## 9. Bonus — aller plus loin (facultatif)
+## 9. Bonus : aller plus loin (facultatif)
 
 - **Supervision minimale** : `docker stats`, healthchecks, ou un agent léger (Netdata/Prometheus).
 - **Bannissement brute force** : `fail2ban` sur SSH (et éventuellement nginx).

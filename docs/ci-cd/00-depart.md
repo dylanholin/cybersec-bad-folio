@@ -1,4 +1,4 @@
-# Pipeline de déploiement continu — DevFolio
+# Pipeline de déploiement continu : DevFolio
 
 > Kit 2 : CI/CD, tests automatisés, scan de sécurité, déploiement sur VPS.
 
@@ -118,14 +118,14 @@ push sur la branche
 
 ## Plan de travail
 
-### Phase 1 — Infrastructure VPS (ce repo, branche `ci-cd-pipeline`)
+### Phase 1 : Infrastructure VPS (ce repo, branche `ci-cd-pipeline`)
 
 1. **Sécuriser le VPS**
    - Mettre à jour le système (`apt update && apt upgrade`)
    - Configurer `fail2ban` pour SSH
    - Activer le firewall UFW (ports 22, 80, 443)
 
-2. **Installer Nginx sur l'hôte** (Option A — Nginx hôte)
+2. **Installer Nginx sur l'hôte** (Option A : Nginx hôte)
    - Arrêter le conteneur frontend existant (conflit ports 80/443)
    - Reverse proxy : `127.0.0.1:8080` (backend) et `127.0.0.1:3000` (frontend)
    - HTTP → redirection 301 vers HTTPS
@@ -138,7 +138,7 @@ push sur la branche
    - Volume persistant `db_data` pour MariaDB
    - Tous les ports mappés sur `127.0.0.1` uniquement (pas d'exposition publique)
 
-### Phase 2 — Pipeline CI (GitHub Actions)
+### Phase 2 : Pipeline CI (GitHub Actions)
 
 4. **Créer `.github/workflows/ci.yml`**
    - Checkout du code
@@ -157,16 +157,16 @@ push sur la branche
    - Tous les ports mappés sur `127.0.0.1` (frontend `3000:80`, backend `8080:8080`, MariaDB `3306:3306`)
    - `restart: unless-stopped` sur tous les services
 
-### Phase 3 — Tests automatisés
+### Phase 3 : Tests automatisés
 
 6. **Tests unitaires backend**
    - JUnit 5 + Mockito
    - Couvrir les controllers, services, validators
    - Ne pas tester la couche JPA (utiliser `@WebMvcTest` et `@MockBean`)
 
-> **Tests E2E (non implémentés)** : Playwright ou Cypress — scénarios login, création de projet, modification de profil. Voir section "Prochaine étape".
+> **Tests E2E (non implémentés)** : Playwright ou Cypress, scénarios login, création de projet, modification de profil. Voir section "Prochaine étape".
 
-### Phase 4 — Déploiement continu
+### Phase 4 : Déploiement continu
 
 7. **Déploiement sur le VPS**
    - GitHub Actions se connecte au VPS via SSH (clé déployée en secret)
@@ -206,10 +206,10 @@ push sur la branche
 
 | Phase | Statut | Détail |
 |---|---|---|
-| **Phase 1 — Infrastructure VPS** | ✅ Terminée | fail2ban, UFW, Nginx hôte, certificat auto-signé, `.env` créé — voir `01-infrastructure-vps.md` |
-| **Phase 2 — Pipeline CI** | ✅ Terminée | `.github/workflows/ci.yml`, tests, Semgrep, Trivy, push GHCR — voir `02-pipeline-ci.md` |
-| **Phase 3 — Tests automatisés** | ✅ Terminée | JUnit + Mockito (16 tests backend), Vitest (2 tests frontend) — voir `03-tests-automatises.md` |
-| **Phase 4 — Déploiement continu** | ✅ Terminée | Job `deploy` SSH → VPS, `docker compose pull/up`, healthcheck `/actuator/health` 60s — voir `06-deploiement-continu.md` |
+| **Phase 1 : Infrastructure VPS** | ✅ Terminée | fail2ban, UFW, Nginx hôte, certificat auto-signé, `.env` créé, voir `01-infrastructure-vps.md` |
+| **Phase 2 : Pipeline CI** | ✅ Terminée | `.github/workflows/ci.yml`, tests, Semgrep, Trivy, push GHCR, voir `02-pipeline-ci.md` |
+| **Phase 3 : Tests automatisés** | ✅ Terminée | JUnit + Mockito (16 tests backend), Vitest (2 tests frontend), voir `03-tests-automatises.md` |
+| **Phase 4 : Déploiement continu** | ✅ Terminée | Job `deploy` SSH → VPS, `docker compose pull/up`, healthcheck `/actuator/health` 60s, voir `06-deploiement-continu.md` |
 
 ---
 

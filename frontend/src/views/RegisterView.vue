@@ -73,7 +73,7 @@ async function register() {
                        :style="{ width: (passwordStrength.level / 3 * 100) + '%' }"></div>
                 </div>
                 <small id="password-help" class="text-muted">
-                  Force : {{ passwordStrength.label }} — 12 car. min., majuscule, chiffre, spécial
+                  Force : {{ passwordStrength.label }}, 12 car. min., majuscule, chiffre, spécial
                 </small>
               </div>
             </div>

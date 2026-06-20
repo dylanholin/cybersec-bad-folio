@@ -1,4 +1,4 @@
-# Docker Compose Staging — VPS
+# Docker Compose Staging : VPS
 # Nginx hôte gère le TLS (ports 80/443 public).
 # Les conteneurs écoutent uniquement sur 127.0.0.1.
 # Images pré-construites depuis GHCR (pas de build local).

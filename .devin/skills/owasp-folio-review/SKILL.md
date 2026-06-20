@@ -23,19 +23,19 @@ silencieuses faciles à casser, et les corrections spécifiques appliquées sur 
 ## Régressions silencieuses
 
 Ces éléments se cassent sans erreur de compilation. Vérifie leur présence dans le diff,
-même si l'utilisateur ne les mentionne pas — un refactor innocent peut les supprimer.
+même si l'utilisateur ne les mentionne pas, un refactor innocent peut les supprimer.
 
-- **`FilterRegistrationBean(enabled=false)`** sur `JwtAuthenticationFilter` — sans cela,
+- **`FilterRegistrationBean(enabled=false)`** sur `JwtAuthenticationFilter` : sans cela,
   Spring Boot enregistre le filtre deux fois (auto-config servlet + Spring Security) →
   race condition sur `SecurityContext`. Semble inutile, ne l'est pas.
-- **`sessionStorage`** dans `stores/auth.js` — remettre `localStorage` est une régression
+- **`sessionStorage`** dans `stores/auth.js` : remettre `localStorage` est une régression
   A07-03 (le token persiste après fermeture d'onglet). AGENTS.md mentionne sessionStorage
   dans la structure du projet mais pas comme règle non négociable.
-- **`TokenBlacklistService`** + endpoint `/api/auth/logout` — invalidation serveur des
+- **`TokenBlacklistService`** + endpoint `/api/auth/logout` : invalidation serveur des
   tokens (A07-05). Facile à supprimer en pensant que c'est du code mort.
-- **`@JsonIgnore`** sur `User.password` — réexpose les hashes de mot de passe en JSON
+- **`@JsonIgnore`** sur `User.password` : réexpose les hashes de mot de passe en JSON
   (A02-01b). Facile à retirer en refactorant le model.
-- **`BCryptPasswordEncoder`** bean dans `SecurityConfig` — si changé pour
+- **`BCryptPasswordEncoder`** bean dans `SecurityConfig` : si changé pour
   `NoOpPasswordEncoder` ou `MessageDigestPasswordEncoder` ("MD5"), régression critique
   (A02-01). AGENTS.md ne mentionne pas l'algorithme de hash.
 
@@ -56,17 +56,17 @@ absentes d'AGENTS.md. Vérifie qu'elles ne sont pas régressées par le diff.
 
 ### Configuration (A05)
 - Actuator : `management.endpoints.web.exposure.include=health` uniquement
-  (plus strict que le 403 d'AGENTS.md — désactive à la source, pas juste protégé)
+  (plus strict que le 403 d'AGENTS.md, désactive à la source, pas juste protégé)
 - `include-stacktrace=never` (pas de stacktrace exposée)
 - `show-sql=false` (pas de SQL loggé)
 - DEBUG off en production (niveau WARN/INFO, pas `DEBUG=true` dans docker-compose)
 - Rotation des logs : `max-file-size=10MB`, `max-history=7`
-- CORS via `CORS_ALLOWED_ORIGINS` (env var), pas `*` — AGENTS.md interdit `*` mais
+- CORS via `CORS_ALLOWED_ORIGINS` (env var), pas `*`. AGENTS.md interdit `*` mais
   ne documente pas le mécanisme de configuration
 
 ### Frontend (A07, A08)
 - `services/api.js` : `baseURL` conditionnel (`/api` en prod via `import.meta.env.PROD`,
-  `localhost:8080` en dev) — pas de `localhost:8080` hardcodé en production
+  `localhost:8080` en dev). Pas de `localhost:8080` hardcodé en production
 - CDN Bootstrap avec `integrity` (SRI) + `crossorigin="anonymous"` dans `index.html`
 - `nginx.staging.conf` : en-têtes CSP, X-Content-Type-Options, X-Frame-Options, HSTS,
   Referrer-Policy présents

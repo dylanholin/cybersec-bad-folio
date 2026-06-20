@@ -6,8 +6,8 @@
 
 ## Livrables UML
 
-- **Format modifiable** : [`diagramme-deploiement.drawio`](./diagramme-deploiement.drawio) — ouvrir avec https://app.diagrams.net
-- **Image exportée** : [`diagramme-deploiement.drawio.png`](./diagramme-deploiement.drawio.png) — livrable visuel du diagramme UML
+- **Format modifiable** : [`diagramme-deploiement.drawio`](./diagramme-deploiement.drawio) : ouvrir avec https://app.diagrams.net
+- **Image exportée** : [`diagramme-deploiement.drawio.png`](./diagramme-deploiement.drawio.png) : livrable visuel du diagramme UML
 
 ---
 
@@ -29,7 +29,7 @@ graph TB
     end
 
     subgraph VPS["VPS Debian (&lt;VPS_IP&gt;)"]
-        NGINX["Nginx (Reverse Proxy hôte)<br/>:443 / :80 — TLS auto-signé"]
+        NGINX["Nginx (Reverse Proxy hôte)<br/>:443 / :80, TLS auto-signé"]
 
         subgraph DOCKER["Docker Engine"]
             BE["backend<br/>(Spring Boot 3.5)<br/>:8080 → 127.0.0.1"]
