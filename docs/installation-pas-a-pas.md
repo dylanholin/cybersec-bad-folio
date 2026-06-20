@@ -212,6 +212,103 @@ curl -s http://127.0.0.1:8080/actuator/health
 # https://<VPS_IP> (certificat auto-signé, accepter l'avertissement)
 ```
 
+> Si vous obtenez une page "Welcome to nginx!" au lieu du site DevFolio, passez à l'Étape 6. C'est que le nginx hôte n'a pas encore de config DevFolio.
+
+---
+
+### Étape 6 : Configurer nginx hôte (reverse proxy TLS)
+
+> **Pourquoi cette étape ?** Les conteneurs écoutent uniquement sur `127.0.0.1` (frontend sur `3000`, backend sur `8080`). Pour qu'ils soient accessibles depuis l'extérieur en HTTPS, il faut un reverse proxy sur le port 80/443 qui termine le TLS et redirige vers les conteneurs. C'est le rôle du nginx installé sur l'hôte (pas le nginx du conteneur frontend).
+>
+> Cette config n'est **pas** versionnée dans le repo : elle contient des chemins et certificats spécifiques au VPS. Elle se crée manuellement après le premier déploiement.
+
+```bash
+# En root (sudo -i) sur le VPS
+
+# 1. Certificat auto-signé (sans nom de domaine ; sinon utiliser Let's Encrypt)
+mkdir -p /etc/nginx/ssl
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -subj "/CN=localhost" \
+  -keyout /etc/nginx/ssl/devfolio.key \
+  -out /etc/nginx/ssl/devfolio.crt
+chmod 600 /etc/nginx/ssl/devfolio.key
+
+# 2. Config reverse proxy
+tee /etc/nginx/conf.d/devfolio.conf <<'EOF'
+server {
+    listen 80 default_server;
+    server_name _;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl default_server;
+    server_name _;
+
+    ssl_certificate     /etc/nginx/ssl/devfolio.crt;
+    ssl_certificate_key /etc/nginx/ssl/devfolio.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /actuator/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+
+# 3. Supprimer une éventuelle config par défaut qui capterait les ports 80/443
+rm -f /etc/nginx/sites-enabled/default
+rm -f /etc/nginx/conf.d/default.conf
+
+# 4. Valider et redémarrer
+nginx -t && systemctl restart nginx
+```
+
+> **Redéploiement sur un VPS existant** : si une ancienne config DevFolio existe déjà (dans `sites-enabled/devfolio` par exemple), supprimez-la avant de recréer `conf.d/devfolio.conf`, sinon nginx affichera un warning `conflicting server name "_" on 0.0.0.0:80, ignored` :
+> ```bash
+> rm -f /etc/nginx/sites-enabled/devfolio
+> ```
+
+### Vérifier que le site est accessible
+
+```bash
+# Test login depuis le VPS (doit retourner un token JWT)
+curl -sk -X POST https://localhost/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@devfolio.com","password":"DevfolioAdmin2024!"}'
+# → {"token":"eyJ...","user":{...}}
+
+# Actuator /env doit retourner 401 (sécurisé par Spring Security)
+curl -sk -o /dev/null -w "%{http_code}\n" https://localhost/actuator/env
+# → 401
+```
+
+Puis depuis un navigateur : `https://<VPS_IP>` (accepter le certificat auto-signé).
+
+> **Si le login retourne 403 dans le navigateur mais 200 en curl** : c'est un problème CORS. Voir la section [Dépannage](#dépannage) ci-dessous.
+
 ---
 
 ## Après le déploiement initial
@@ -250,9 +347,34 @@ git reset --hard origin/ci-cd-pipeline
 docker compose up --build -d
 ```
 
+### Modifier le `.env` (CORS, secrets, etc.)
+
+> **Important** : `docker compose restart` **ne relit pas** le `.env`. Il redémarre le conteneur avec les variables d'environnement qu'il avait au moment de sa création. Pour appliquer un changement de `.env`, il faut **recréer** le conteneur.
+
+```bash
+# En tant que deploy, dans /opt/devfolio
+
+# 1. Éditer le .env
+nano .env
+# (par exemple : CORS_ALLOWED_ORIGINS=https://<VPS_IP>)
+
+# 2. Recréer les conteneurs pour qu'ils relisent le .env
+docker compose up -d --force-recreate
+
+# 3. Vérifier que la nouvelle valeur est bien prise en compte
+docker exec devfolio-backend-1 printenv CORS_ALLOWED_ORIGINS
+# → https://<VPS_IP>
+```
+
+> **Cas fréquent : `CORS_ALLOWED_ORIGINS`**. Après un déploiement initial, cette variable contient souvent `http://localhost:5173,http://localhost` (valeur par défaut). Il faut la remplacer par `https://<VPS_IP>` pour que le login fonctionne depuis le navigateur. Sinon le backend renvoie `403 Invalid CORS request` sur les requêtes POST.
+>
+> **Pourquoi `--force-recreate` et pas `restart` ?** Docker Compose charge le `.env` au moment de créer le conteneur (étape `up`). `restart` ne fait que redémarrer le processus existant avec le même environnement. `--force-recreate` détruit et recrée le conteneur, donc relit le `.env`.
+
 ---
 
 ## Dépannage
+
+### Erreurs de déploiement
 
 | Problème | Solution |
 |----------|----------|
@@ -264,8 +386,47 @@ docker compose up --build -d
 | `.env` écrasé par `deploy.sh` | Si un `.env` existait avant, `deploy.sh` le détecte et ne l'écrase pas. Si écrasé accidentellement, récupérer les anciens secrets via `docker exec devfolio-mariadb-1 printenv MYSQL_ROOT_PASSWORD` |
 | Backend ne démarre pas | `docker compose logs backend`, vérifier que `DB_PASSWORD` dans `.env` correspond à ce que `init-template.sql` a utilisé pour créer l'utilisateur `devfolio_app` |
 | `IMAGE_TAG` vide dans `.env` | Ajouter `IMAGE_TAG=manual` dans `/opt/devfolio/.env` (le CI/CD le mettra à jour automatiquement) |
-| Port 80/443 déjà utilisé | Si nginx est installé sur l'hôte : `sudo systemctl stop nginx && sudo systemctl disable nginx` (le frontend Docker gère le TLS) |
 | `deploy.sh` s'arrête au test de login | Bug `pipefail` corrigé depuis le commit `51c96b5`. Si vous avez une ancienne version, faire `git pull` |
+
+### Erreurs d'accès au site (après déploiement)
+
+| Problème | Solution |
+|----------|----------|
+| Page "Welcome to nginx!" au lieu du site | Le nginx hôte n'a pas de config DevFolio. Suivre l'[Étape 6](#étape-6--configurer-nginx-hôte-reverse-proxy-tls). Ne pas désactiver nginx : c'est lui qui gère le TLS, le frontend Docker écoute en HTTP sur `127.0.0.1:3000` |
+| `conflicting server name "_" on 0.0.0.0:80, ignored` | Une ancienne config DevFolio existe dans `sites-enabled/`. La supprimer : `rm -f /etc/nginx/sites-enabled/devfolio` puis `nginx -t && systemctl reload nginx` |
+| Login 403 dans le navigateur, mais 200 en curl | **CORS rejeté**. Vérifier `docker exec devfolio-backend-1 printenv CORS_ALLOWED_ORIGINS` : doit contenir `https://<VPS_IP>`. Si la valeur est encore `http://localhost:5173,http://localhost`, voir [Modifier le `.env`](#modifier-le-env-cors-secrets-etc) |
+| Login 403 même après correction du `.env` | `docker compose restart` ne relit pas le `.env`. Utiliser `docker compose up -d --force-recreate` (voir [Modifier le `.env`](#modifier-le-env-cors-secrets-etc)) |
+| "JWT signature does not match" dans les logs backend | Un ancien token JWT est stocké dans le sessionStorage du navigateur (déploiement précédent avec un autre `JWT_SECRET`). F12 → Application → Session Storage → supprimer `devfolio_token` et `devfolio_user`, recharger la page |
+| `NS_ERROR_NET_RESET` ou connexion refusée | Vérifier que le nginx hôte écoute sur 80/443 : `ss -tlnp | grep -E ':(80|443)\b'`. Si rien n'écoute, démarrer nginx : `systemctl start nginx` |
+
+### Diagnostic CORS détaillé
+
+Si le login retourne 403 dans le navigateur mais 200 en curl depuis le VPS :
+
+1. **Identifier la cause** : une réponse 403 sans header `Content-Type` et avec un body court (~20 octets) est typique du rejet CORS par Spring Security (`Invalid CORS request`).
+
+2. **Vérifier la valeur dans le conteneur backend** :
+   ```bash
+   docker exec devfolio-backend-1 printenv CORS_ALLOWED_ORIGINS
+   ```
+   - Si la valeur est `http://localhost:5173,http://localhost` : le `.env` n'a pas été mis à jour, ou le conteneur n'a pas été recréé.
+
+3. **Corriger le `.env`** :
+   ```bash
+   cd /opt/devfolio
+   sed -i 's|^CORS_ALLOWED_ORIGINS=.*|CORS_ALLOWED_ORIGINS=https://<VPS_IP>|' .env
+   grep CORS_ALLOWED_ORIGINS .env  # vérifier
+   ```
+
+4. **Recréer le conteneur backend** :
+   ```bash
+   docker compose up -d --force-recreate backend
+   docker exec devfolio-backend-1 printenv CORS_ALLOWED_ORIGINS  # doit afficher la nouvelle valeur
+   ```
+
+5. **Vider le sessionStorage du navigateur** : F12 → Application → Session Storage → supprimer `devfolio_token` et `devfolio_user`, recharger la page.
+
+6. **Tester** : se connecter à `https://<VPS_IP>/login`.
 
 ---
 
