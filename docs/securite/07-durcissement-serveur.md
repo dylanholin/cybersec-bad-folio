@@ -113,7 +113,7 @@ sudo usermod -aG sudo deploy          # Debian/Ubuntu (ou 'wheel' sur RHEL)
 
 > **Avertissement de sécurité :** appartenir au groupe `docker` équivaut quasiment à un accès root (on peut monter `/` dans un conteneur). C'est un compromis accepté pour l'exploitation Docker, mais il faut limiter le nombre de membres de ce groupe et protéger l'accès SSH de ce compte.
 >
-> **Piège rencontré en production :** si `deploy` est créé manuellement **avant** le script de durcissement, le groupe `docker` peut être oublié. Vérifier avec `id deploy` et compléter avec `usermod -aG docker deploy` si besoin. De même, si `AllowUsers deploy` est appliqué en SSH, s'assurer qu'une **clé SSH est déposée** pour ce compte (`/home/deploy/.ssh/authorized_keys`) avant de redémarrer SSH, sinon l'accès distant est perdu.
+> **Piège rencontré en production :** si `deploy` est créé manuellement **avant** le script de durcissement, le groupe `docker` peut être oublié. Vérifier avec `id deploy` et compléter avec `usermod -aG docker deploy` si besoin. De même, `AllowUsers` doit inclure à la fois `deploy` **et** l'utilisateur admin existant (ex: `debian`), sinon l'accès SSH admin est perdu. Le script `hardening.sh` détecte automatiquement l'utilisateur admin via `$SUDO_USER`.
 
 ### 1.5 Préparer répertoires et logs
 
@@ -143,8 +143,8 @@ SSH est le point d'entrée critique du serveur. Configuration recommandée dans 
 PasswordAuthentication no
 PermitRootLogin no
 PubkeyAuthentication yes
-# Limiter explicitement les comptes autorisés
-AllowUsers deploy
+# Limiter explicitement les comptes autorisés (deploy + admin existant)
+AllowUsers deploy debian
 # Réduire la fenêtre d'attaque
 MaxAuthTries 3
 LoginGraceTime 30
@@ -197,9 +197,9 @@ sudo ufw status numbered
 | 80 | HTTP → redirection HTTPS | Ouvert (public) |
 | 443 | HTTPS (reverse proxy nginx) | Ouvert (public) |
 | 22 | SSH | Ouvert (administration uniquement) |
-| 3306 | MariaDB | **Fermé** — accès via réseau Docker interne uniquement |
-| 8080 | Backend Spring Boot | **Fermé** — accès via nginx reverse proxy uniquement |
-| 5005 | Debug JVM | **Fermé** — supprimé du Dockerfile (cf. doc 06) |
+| 3306 | MariaDB | **Fermé**, accès via réseau Docker interne uniquement |
+| 8080 | Backend Spring Boot | **Fermé**, accès via nginx reverse proxy uniquement |
+| 5005 | Debug JVM | **Fermé**, supprimé du Dockerfile (cf. doc 06) |
 
 > **Piège Docker / UFW :** Docker manipule directement `iptables` et **contourne** les règles UFW pour les ports qu'il publie (`ports:` dans `docker-compose.yml`). Conséquence : un port publié par Docker peut rester accessible **malgré** une règle `ufw deny`. La parade est de **ne pas publier** les ports internes (3306, 8080) sur l'hôte, ou de les binder sur `127.0.0.1` (cf. [04-infrastructure.md](04-infrastructure.md), chaîne `DOCKER-USER`). Ce point est repris au moment du déploiement (doc 08).
 >
@@ -291,7 +291,7 @@ Ressources : [Docker security](https://docs.docker.com/engine/security/) · [OWA
 | Domaine | Modification | Effet sécurité |
 |---------|--------------|----------------|
 | Mises à jour | `apt/dnf upgrade` | Correction des CVE connues |
-| SSH | Clés uniquement, root interdit, `AllowUsers deploy`, `MaxAuthTries 3` | Réduction du brute force et de l'usurpation |
+| SSH | Clés uniquement, root interdit, `AllowUsers deploy debian`, `MaxAuthTries 3` | Réduction du brute force et de l'usurpation |
 | Pare-feu | UFW : deny entrant par défaut, ouverture 22/80/443 uniquement | Surface réseau minimale |
 | Services | Désactivation des services réseau inutiles | Moins de processus exposés |
 | Utilisateurs | Compte `deploy` dédié, pas d'opération en root, audit des privilèges | Moindre privilège |
@@ -308,7 +308,7 @@ Ressources : [Docker security](https://docs.docker.com/engine/security/) · [OWA
 | Membres du groupe `docker` | MOYENNE | Accès quasi-root via Docker | Limiter le nombre de membres, surveiller l'accès SSH |
 | Certificat HTTPS auto-signé | INFO | Avertissement navigateur en démo | Let's Encrypt en production |
 | Pas de supervision / sauvegarde | INFO | Aucune alerte ni restauration en cas d'incident | Voir bonus (supervision, backups) |
-| Pas de bannissement automatique | ~~BASSE~~ | ~~Brute force SSH non bloqué dynamiquement~~ | **Corrigé** : `fail2ban` installé (jail sshd, `bantime = 3600`, `maxretry = 3` — cf. `01-infrastructure-vps.md`). |
+| Pas de bannissement automatique | ~~BASSE~~ | ~~Brute force SSH non bloqué dynamiquement~~ | **Corrigé** : `fail2ban` installé (jail sshd, `bantime = 3600`, `maxretry = 3`, cf. `01-infrastructure-vps.md`). |
 | Mot de passe `devfolio_app` en dur dans `init.sql` | ~~BASSE~~ | ~~`'DevfolioApp2024!'` hardcodé dans le SQL commité~~ | **Corrigé** : `init.sql` remplacé par `init-template.sql` + `init.sh` avec injection `${DB_PASSWORD}`. Fichier genere supprime immediatement apres execution. |
 | `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | ~~INFO~~ | ~~Le mot de passe root MariaDB est identique au compte applicatif dans `docker-compose.yml`~~ | **Corrigé** : `DB_ROOT_PASSWORD` séparé de `DB_PASSWORD` dans `.env.example`, `docker-compose.yml`, `docker-compose.staging.yml` et `deploy.sh`. |
 
@@ -317,7 +317,7 @@ Ressources : [Docker security](https://docs.docker.com/engine/security/) · [OWA
 ## 5. Checklist de préparation serveur
 
 - [ ] Accès SSH par clé fonctionnel (mot de passe désactivé)
-- [ ] `PermitRootLogin no` et `AllowUsers deploy` appliqués + nouvelle connexion testée
+- [ ] `PermitRootLogin no` et `AllowUsers deploy debian` appliqués + nouvelle connexion testée
 - [ ] **Session de secours ouverte** avant tout redémarrage SSH
 - [ ] Système à jour
 - [ ] Docker + Compose installés, version vérifiée

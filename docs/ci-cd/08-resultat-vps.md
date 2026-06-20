@@ -31,7 +31,7 @@
 
 ---
 
-## 2. Sécurité du VPS — vérifications réelles
+## 2. Sécurité du VPS : vérifications réelles
 
 > Toutes les commandes ci-dessous ont été exécutées sur le VPS en production après le
 > déploiement. Les résultats sont ceux observés réellement.
@@ -48,7 +48,7 @@ ls -la /opt/devfolio/.env
 
 | Vérification | Résultat | Statut |
 |---|---|---|
-| Permissions | `600` (`rw-------`) — seul le propriétaire peut lire/écrire | ✅ |
+| Permissions | `600` (`rw-------`), seul le propriétaire peut lire/écrire | ✅ |
 | Propriétaire | `deploy:deploy` | ✅ |
 
 > Le fichier `.env` contient `JWT_SECRET`, `DB_PASSWORD`, `CORS_ALLOWED_ORIGINS` et
@@ -91,7 +91,7 @@ Status for the jail: sshd
 > **Lecture des chiffres** : 718 tentatives de connexion SSH échouées en 2 jours sont
 > des bots automatisés qui scannent internet. fail2ban les bannit après 3 échecs dans
 > l'heure. Sans mot de passe sur le compte `deploy` (voir §2.5), ces tentatives ne
-> peuvent **jamais** aboutir — mais fail2ban empêche le bruit réseau et les logs.
+> peuvent **jamais** aboutir. Mais fail2ban empêche le bruit réseau et les logs.
 
 ---
 
@@ -131,7 +131,7 @@ Status: active
 
 ### 2.4 Clés SSH
 
-#### Clé personnelle (`id_ed25519`) — connexion en `debian`
+#### Clé personnelle (`id_ed25519`) : connexion en `debian`
 
 ```bash
 # Sur la machine locale (PowerShell)
@@ -146,7 +146,7 @@ ssh-keygen -y -f C:\Users\<USER>\.ssh\id_ed25519
 > La clé personnelle sert à se connecter manuellement au VPS en `debian` (compte admin).
 > La passphrase protège la clé si le fichier est volé sur la machine locale.
 
-#### Clé de déploiement (`devfolio_deploy`) — connexion en `deploy` via GitHub Actions
+#### Clé de déploiement (`devfolio_deploy`) : connexion en `deploy` via GitHub Actions
 
 | Vérification | Résultat | Statut |
 |---|---|---|
@@ -178,18 +178,18 @@ deploy:!:20619:0:99999:7:::
 
 | Vérification | Résultat | Statut |
 |---|---|---|
-| `passwd -S` | `L` (Locked) — mot de passe verrouillé | ✅ |
-| `/etc/shadow` | `!` — mot de passe désactivé | ✅ |
+| `passwd -S` | `L` (Locked), mot de passe verrouillé | ✅ |
+| `/etc/shadow` | `!`, mot de passe désactivé | ✅ |
 | Authentification | Clé SSH uniquement (pas de mot de passe) | ✅ |
 
 > **Pourquoi c'est la protection la plus importante** : un bot peut essayer 10 millions
-> de mots de passe, **aucun ne marchera** — il n'y en a pas. La seule façon de se
+> de mots de passe, **aucun ne marchera**. Il n'y en a pas. La seule façon de se
 > connecter en `deploy` est d'avoir la clé privée `devfolio_deploy`, stockée dans
 > GitHub Secrets. Le brute-force SSH est **impossible** sur ce compte.
 
 ---
 
-## 3. Résumé — toutes les vérifications
+## 3. Résumé : toutes les vérifications
 
 | # | Vérification | Résultat | Statut |
 |---|---|---|---|

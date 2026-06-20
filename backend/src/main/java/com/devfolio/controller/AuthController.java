@@ -100,7 +100,7 @@ public class AuthController {
     }
 
     /**
-     * A07-05 : Logout côté serveur — invalide le token JWT en l'ajoutant à la blacklist.
+     * A07-05 : Logout côté serveur : invalide le token JWT en l'ajoutant à la blacklist.
      * Le token reste blacklisté jusqu'à son expiration naturelle.
      */
     @PostMapping("/logout")
@@ -113,7 +113,7 @@ public class AuthController {
                 tokenBlacklistService.blacklist(token, claims);
                 log.info("Logout réussi pour {}", claims.getSubject());
             } catch (Exception e) {
-                // Token déjà invalide ou expiré — rien à blacklister
+                // Token déjà invalide ou expiré, rien à blacklister
                 log.debug("Logout avec token invalide : {}", e.getMessage());
             }
         }

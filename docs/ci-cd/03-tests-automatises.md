@@ -1,4 +1,4 @@
-# Phase 3 — Tests automatisés
+# Phase 3 : Tests automatisés
 
 > Tests unitaires backend et frontend. Le plan initial est dans [`00-depart.md`](./00-depart.md).
 
@@ -12,7 +12,7 @@
 
 ---
 
-## Backend — 3 classes, 16 tests
+## Backend : 3 classes, 16 tests
 
 | Fichier | Tests | Couverture |
 |---|---|---|
@@ -24,7 +24,7 @@
 
 ---
 
-## Frontend — 1 fichier, 2 tests
+## Frontend : 1 fichier, 2 tests
 
 | Fichier | Tests | Couverture |
 |---|---|---|
@@ -36,13 +36,13 @@
 
 ### Backend (`pom.xml`)
 
-- `spring-boot-starter-test` (scope `test`) — inclut JUnit 5, Mockito, AssertJ
+- `spring-boot-starter-test` (scope `test`), inclut JUnit 5, Mockito, AssertJ
 - Spring Boot parent mis à jour de 3.2.0 vers **3.5.15** (corrige 33 CVE Java : Tomcat, Spring Security, Spring Framework, Logback)
 
 ### Frontend (`package.json`)
 
-- `vitest` ^1.0.0 — runner de tests
-- `@vue/test-utils` ^2.4.0 — utilitaires de test Vue
-- `jsdom` ^24.0.0 — environnement DOM pour les tests
+- `vitest` ^1.0.0 : runner de tests
+- `@vue/test-utils` ^2.4.0 : utilitaires de test Vue
+- `jsdom` ^24.0.0 : environnement DOM pour les tests
 - Script `test` : `vitest run`
 - Config : `vitest.config.js` (environnement jsdom, globals activés)

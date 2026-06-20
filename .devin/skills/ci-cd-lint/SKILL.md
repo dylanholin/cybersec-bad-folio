@@ -24,30 +24,30 @@ spécifiques aux workflows GitHub Actions que AGENTS.md ne mentionne pas.
 
 ### Bloquantes (contradiction avec AGENTS.md ou faille critique)
 
-- **`continue-on-error: true` sur Trivy** — Trivy doit être bloquant (`exit-code: '1'`).
+- **`continue-on-error: true` sur Trivy** : Trivy doit être bloquant (`exit-code: '1'`).
   Si `continue-on-error` apparaît sur un step Trivy, le scan d'image est décoratif.
   Exception : Semgrep (SAST) est non-bloquant par design dans ce projet
   (`continue-on-error: true` sur Semgrep = correct, ne pas flagger).
-- **`pull_request_target`** comme trigger — exécute le workflow avec les secrets
+- **`pull_request_target`** comme trigger : exécute le workflow avec les secrets
   du repo sur un PR forké. Faille critique d'injection. Utiliser `pull_request`
   (déjà le cas dans ce projet, vérifier que ça ne régresse pas).
-- **Secret passé à une action non-épingle** — `secrets.GITHUB_TOKEN` ou
+- **Secret passé à une action non-épingle** : `secrets.GITHUB_TOKEN` ou
   `secrets.VPS_*` passé à une action en `@v1` (tag mutable). Le tag peut être
   déplacé vers une version malveillante qui exfiltre le secret.
 
 ### Avertissements (bonnes pratiques non couvertes par AGENTS.md)
 
-- **Actions non épinglées par SHA** — `actions/checkout@v4`, `docker/build-push-action@v6`
+- **Actions non épinglées par SHA** : `actions/checkout@v4`, `docker/build-push-action@v6`
   utilisent des tags mutable. Un attaquant qui compromet le tag injecte du code.
   Recommandation : épingler par SHA de commit (`@<40-char-hash>`).
   Exception tolérée : actions officielles GitHub (`actions/*`) en tag de version majeure.
   Priorité haute : `appleboy/ssh-action` (accès SSH + clé privée) doit être épinglé par SHA.
-- **`permissions` excessives** — `actions: write`, `packages: write` sur un job
+- **`permissions` excessives** : `actions: write`, `packages: write` sur un job
   qui n'en a pas besoin. Principe du moindre privilège : ne garder que ce que le
   job utilise réellement.
-- **`permissions` au niveau workflow** (hors job) — accorde les permissions à tous
+- **`permissions` au niveau workflow** (hors job) : accorde les permissions à tous
   les jobs. Préférer `permissions:` au niveau de chaque job.
-- **Script injection dans `run:`** — interpolation `${{ }}` directement dans un
+- **Script injection dans `run:`** : interpolation `${{ }}` directement dans un
   bloc `run:` avec des données non fiables (titre de PR, body, branche).
   Utiliser des variables d'environnement (`env:`) puis `$VAR` dans le script.
 

@@ -1,4 +1,4 @@
-# Phase 4 — Déploiement continu (CD)
+# Phase 4 : Déploiement continu (CD)
 
 > Déploiement automatique sur le VPS via SSH. Le plan initial est dans [`00-depart.md`](./00-depart.md).
 
@@ -10,7 +10,7 @@ Après la build, le scan Trivy et le push des images sur GHCR, le job `deploy` s
 
 > **Pour un débutant** : le déploiement continu (CD) est l'étape finale du pipeline. Une fois que le code a passé tous les tests et que les images Docker sont construites et scannées, le pipeline se connecte automatiquement au serveur de production (VPS) pour y installer la nouvelle version. Aucune intervention humaine n'est nécessaire.
 >
-> **Analogie** : imaginez un restaurant. La CI (tests + build) c'est la préparation en cuisine — on vérifie que les ingrédients sont bons et on cuisine le plat. La CD (déploiement) c'est le service en salle — on apporte le plat au client. Ici, le "client" c'est le serveur VPS qui fait tourner l'application.
+> **Analogie** : imaginez un restaurant. La CI (tests + build) c'est la préparation en cuisine. On vérifie que les ingrédients sont bons et on cuisine le plat. La CD (déploiement) c'est le service en salle. On apporte le plat au client. Ici, le "client" c'est le serveur VPS qui fait tourner l'application.
 
 ---
 
@@ -18,8 +18,8 @@ Après la build, le scan Trivy et le push des images sur GHCR, le job `deploy` s
 
 | Étape | Action |
 |---|---|
-| **Condition** | `if: github.ref == 'refs/heads/ci-cd-pipeline'` — ne se déclenche que sur push direct sur la branche |
-| **Dépendance** | `needs: [build-and-push]` — attend que les images soient poussées sur GHCR |
+| **Condition** | `if: github.ref == 'refs/heads/ci-cd-pipeline'`, ne se déclenche que sur push direct sur la branche |
+| **Dépendance** | `needs: [build-and-push]`, attend que les images soient poussées sur GHCR |
 | **Connexion SSH** | `appleboy/ssh-action` épinglé par SHA `7eaf766...` (v1.2.0) avec clé privée stockée en GitHub Secret |
 | **Mise à jour IMAGE_TAG** | `sed -i` dans `.env` sur le VPS pour pointer vers le SHA du commit |
 | **Récupération fichiers** | `git fetch` + `git checkout` du `docker-compose.staging.yml` et `nginx.staging.conf` à jour |
@@ -116,7 +116,7 @@ La configuration Nginx sur l'hôte (`/etc/nginx/sites-enabled/devfolio`) est ins
 
 ## Correctifs appliqués
 
-### Correctif healthcheck — Run #1
+### Correctif healthcheck : Run #1
 
 | Problème | Cause | Fix |
 |---|---|---|
@@ -124,7 +124,7 @@ La configuration Nginx sur l'hôte (`/etc/nginx/sites-enabled/devfolio`) est ins
 
 > Le backend Spring Boot n'a pas de `server.servlet.context-path=/api`. Le préfixe `/api` est ajouté par le reverse proxy Nginx sur l'hôte. En accès direct (`127.0.0.1:8080`), l'endpoint actuator est sur `/actuator/health` (sans `/api`).
 
-### Run #2 — Succès ✅
+### Run #2 : Succès ✅
 
 | Résultat | Détail |
 |---|---|
@@ -135,7 +135,7 @@ La configuration Nginx sur l'hôte (`/etc/nginx/sites-enabled/devfolio`) est ins
 | **Healthcheck** | `Backend OK` après 2 tentatives (~10s) |
 | **Déploiement** | Terminé avec succès |
 
-### Correctif frontend nginx — Run #3
+### Correctif frontend nginx : Run #3
 
 | Problème | Cause | Fix |
 |---|---|---|
@@ -151,5 +151,5 @@ Le volume nommé `db_data` dans `docker-compose.staging.yml` garantit que les do
 
 ```yaml
 volumes:
-  - db_data:/var/lib/mysql  # volume nommé — persiste entre les déploiements
+  - db_data:/var/lib/mysql  # volume nommé : persiste entre les déploiements
 ```

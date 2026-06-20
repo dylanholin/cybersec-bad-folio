@@ -38,7 +38,7 @@ La base de données est accessible depuis n'importe quelle interface réseau, y 
 - Le binding `0.0.0.0:3306` signifie que le port 3306 de l'hôte écoute sur **toutes les interfaces réseau**, y compris l'interface publique (Internet).
 - Un attaquant peut tenter une connexion directe à MariaDB depuis Internet : brute-force du mot de passe, exploitation de vulnérabilités MariaDB, ou extraction de données.
 - Même avec un mot de passe fort, l'exposition inutile d'un service augmente la surface d'attaque (principe du moindre privilège).
-- Les bases de données ne doivent **jamais** être accessibles directement depuis l'extérieur — seul le backend a besoin de s'y connecter.
+- Les bases de données ne doivent **jamais** être accessibles directement depuis l'extérieur. Seul le backend a besoin de s'y connecter.
 
 **Correction :**
 ```yaml
@@ -169,7 +169,7 @@ Ces secrets dupliquent ceux du `.env` et sont visibles dans le fichier `docker-c
 - `docker inspect <conteneur>` affiche les variables d'environnement en clair, y compris les secrets. N'importe qui avec accès Docker sur l'hôte peut les récupérer.
 - Le mot de passe `root` et le secret JWT `secret123` sont triviaux et devinables par brute-force.
 - La duplication des secrets entre `.env` et `docker-compose.yml` crée une incohérence : si l'un est changé mais pas l'autre, des services peuvent échouer ou utiliser un secret obsolète.
-- Le fichier `docker-compose.yml` est souvent partagé, copié, ou affiché dans des tickets de support — les secrets fuient facilement.
+- Le fichier `docker-compose.yml` est souvent partagé, copié, ou affiché dans des tickets de support. Les secrets fuient facilement.
 
 **Correction :** Utiliser `env_file` ou des secrets Docker :
 ```yaml
@@ -198,7 +198,7 @@ L'image `openjdk:21` fait ~500 Mo. Une image JRE Alpine ferait ~100 Mo.
 
 **Pourquoi c'est une faille :**
 - L'image `openjdk:21` est basée sur Debian et contient le **JDK complet** (outils de compilation, debug, bibliothèques inutiles en runtime). Un conteneur en production n'a besoin que du **JRE** pour exécuter du bytecode.
-- Plus l'image est grande, plus elle contient de binaires et de bibliothèques — donc **plus de surface d'attaque** (CVE sur des paquets inutiles comme `gcc`, `make`, `perl` souvent inclus dans les images Debian).
+- Plus l'image est grande, plus elle contient de binaires et de bibliothèques, donc **plus de surface d'attaque** (CVE sur des paquets inutiles comme `gcc`, `make`, `perl` souvent inclus dans les images Debian).
 - Les images lourdes rallentissent les pulls et les déploiements, augmentant la fenêtre d'indisponibilité.
 - L'image `openjdk` n'est plus officiellement maintenue (dépréciée au profit d'Eclipse Temurin).
 
@@ -253,7 +253,7 @@ Le port 5005 permet l'attachement distant d'un débogueur. L'argument `address=*
 **Pourquoi c'est une faille :**
 - JDWP (Java Debug Wire Protocol) permet à un débogueur distant de **contrôler complètement** l'exécution de la JVM : lecture/écriture de variables, exécution de code arbitraire, arrêt/redémarrage.
 - `address=*:5005` écoute sur **toutes les interfaces réseau** : n'importe qui pouvant atteindre le port 5005 peut s'attacher au débogueur.
-- Un attaquant connecté au débogueur peut **exécuter du code arbitraire** dans la JVM — c'est l'équivalent d'un RCE (Remote Code Execution) sans aucune authentification.
+- Un attaquant connecté au débogueur peut **exécuter du code arbitraire** dans la JVM. C'est l'équivalent d'un RCE (Remote Code Execution) sans aucune authentification.
 - JDWP est un protocole de développement, **jamais** destiné à la production. Il n'a aucun mécanisme d'authentification ni de chiffrement.
 - L'exposition combinée avec DEV-03 (ports sur `0.0.0.0`) rend ce port potentiellement accessible depuis Internet.
 
@@ -315,7 +315,7 @@ Hibernate est configuré pour modifier automatiquement le schéma de la base de 
 
 **Pourquoi c'est une faille :**
 - `ddl-auto=update` autorise Hibernate à **altérer le schéma de la base** à chaque démarrage de l'application. En production, c'est un risque critique :
-  - Si un développeur supprime un champ d'une entité Java, Hibernate peut **dropper la colonne** correspondante et toutes ses données — sans confirmation ni sauvegarde.
+  - Si un développeur supprime un champ d'une entité Java, Hibernate peut **dropper la colonne** correspondante et toutes ses données, sans confirmation ni sauvegarde.
   - Si un champ est renommé, Hibernate peut créer une nouvelle colonne vide et laisser l'ancienne orpheline, causant des incohérences.
   - Les modifications de schéma ne sont **pas traçables** : il n'y a pas de migration versionnée, pas de rollback possible.
 - Un attaquant qui peut modifier une entité Java (ex: via un déploiement compromis) peut altérer le schéma de la base pour insérer des colonnes malveillantes ou dropper des données critiques.
@@ -379,7 +379,7 @@ Aucun en-tête de sécurité n'est configuré.
   - **Pas de `X-Frame-Options`** : la page peut être intégrée dans un `<iframe>` sur un site malveillant, facilitant les attaques de **clickjacking** (l'utilisateur clique sur un élément invisible pensant cliquer ailleurs).
   - **Pas de `X-XSS-Protection`** : le filtre XSS intégré des anciens navigateurs n'est pas activé.
   - **Pas de `Content-Security-Policy`** : le navigateur autorise le chargement de scripts et de ressources depuis n'importe quelle origine, facilitant les attaques **XSS** (injection de scripts externes malveillants).
-  - **Pas de `Strict-Transport-Security`** : après une première visite en HTTPS, le navigateur ne force pas les connexions futures en HTTPS — un attaquant peut forcer une rétrogradation vers HTTP (attaque SSL stripping).
+  - **Pas de `Strict-Transport-Security`** : après une première visite en HTTPS, le navigateur ne force pas les connexions futures en HTTPS. Un attaquant peut forcer une rétrogradation vers HTTP (attaque SSL stripping).
 
 **Correction : ajouter dans le bloc `server` :**
 ```nginx

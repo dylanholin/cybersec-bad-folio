@@ -1,10 +1,10 @@
-# Corrections Trivy — Cycle d'itération CI
+# Corrections Trivy : Cycle d'itération CI
 
 > Le pipeline a nécessité plusieurs itérations pour passer de 36 vulnérabilités à 0.
 
 ---
 
-> **Pour un débutant** : Trivy est un outil qui scanne les images Docker à la recherche de **CVE** (Common Vulnerabilities and Exposures) — des failles de sécurité connues et référencées publiquement. Chaque CVE a un identifiant unique (ex : CVE-2025-24813), une gravité (LOW, MEDIUM, HIGH, CRITICAL) et un composant affecté (ex : Tomcat, Spring Security).
+> **Pour un débutant** : Trivy est un outil qui scanne les images Docker à la recherche de **CVE** (Common Vulnerabilities and Exposures), des failles de sécurité connues et référencées publiquement. Chaque CVE a un identifiant unique (ex : CVE-2025-24813), une gravité (LOW, MEDIUM, HIGH, CRITICAL) et un composant affecté (ex : Tomcat, Spring Security).
 >
 > **Pourquoi scanner ?** : une image Docker contient des dizaines de bibliothèques. Si l'une d'elles a une faille connue, un attaquant peut l'exploiter. Trivy vérifie automatiquement que les bibliothèques utilisées n'ont pas de vulnérabilités HIGH ou CRITICAL non corrigées.
 >
@@ -12,7 +12,7 @@
 
 ---
 
-## Run #4 — `buildx failed`
+## Run #4 : `buildx failed`
 
 | Problème | Cause | Fix |
 |---|---|---|
@@ -20,7 +20,7 @@
 
 ---
 
-## Run #5 — 36 CVE détectées (exit code 1)
+## Run #5 : 36 CVE détectées (exit code 1)
 
 Trivy a remonté **3 CVE Alpine** + **33 CVE Java** (27 HIGH, 6 CRITICAL).
 
@@ -41,17 +41,17 @@ Trivy a remonté **3 CVE Alpine** + **33 CVE Java** (27 HIGH, 6 CRITICAL).
 
 ---
 
-## Run #6 — Faux positif secret SSL
+## Run #6 : Faux positif secret SSL
 
 | Problème | Cause | Fix |
 |---|---|---|
 | Trivy secret scan : `AsymmetricPrivateKey` détecté | Certificat SSL auto-signé du frontend (clé privée RSA dans `/etc/nginx/ssl/devfolio.key`) | `scanners: vuln` pour limiter Trivy aux vulnérabilités uniquement |
 
-> Le certificat auto-signé est généré dans le Dockerfile (`openssl req -x509 -nodes`). La clé privée n'est pas une fuite réelle — elle est embarquée dans l'image pour le HTTPS de dev/staging.
+> Le certificat auto-signé est généré dans le Dockerfile (`openssl req -x509 -nodes`). La clé privée n'est pas une fuite réelle. Elle est embarquée dans l'image pour le HTTPS de dev/staging.
 
 ---
 
-## Run #7 — Succès ✅
+## Run #7 : Succès ✅
 
 | Résultat | Détail |
 |---|---|
@@ -63,7 +63,7 @@ Trivy a remonté **3 CVE Alpine** + **33 CVE Java** (27 HIGH, 6 CRITICAL).
 | **Trivy frontend** | 0 vulnérabilités HIGH/CRITICAL |
 | **Images poussées** | GHCR : `devfolio-backend:8a73a2e`, `devfolio-frontend:8a73a2e` |
 
-> **Note** : Des warnings `Node.js 20 is deprecated` apparaissent sur `actions/checkout@v4`, `docker/build-push-action@v6`, etc. Ces warnings sont des **deprecation notices non bloquants** — GitHub Actions force automatiquement l'exécution sur Node 24. Les actions restent fonctionnelles ; la migration officielle vers les versions Node 22/24 des actions attend les releases upstream.
+> **Note** : Des warnings `Node.js 20 is deprecated` apparaissent sur `actions/checkout@v4`, `docker/build-push-action@v6`, etc. Ces warnings sont des **deprecation notices non bloquants**. GitHub Actions force automatiquement l'exécution sur Node 24. Les actions restent fonctionnelles ; la migration officielle vers les versions Node 22/24 des actions attend les releases upstream.
 
 ---
 

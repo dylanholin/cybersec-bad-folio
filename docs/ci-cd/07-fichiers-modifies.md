@@ -23,7 +23,7 @@
 | `docs/ci-cd/05-corrections-trivy.md` | Création (scission de `01-pipeline-ci.md`) | ce commit |
 | `docs/ci-cd/06-deploiement-continu.md` | Création (scission de `01-pipeline-ci.md`) | ce commit |
 | `docs/ci-cd/07-fichiers-modifies.md` | Création (scission de `01-pipeline-ci.md`) | ce commit |
-| `docs/ci-cd/diagramme-deploiement.drawio` | Création — diagramme UML de déploiement (diagrams.net) | à commiter |
+| `docs/ci-cd/diagramme-deploiement.drawio` | Création : diagramme UML de déploiement (diagrams.net) | à commiter |
 | `docs/ci-cd/diagramme-deploiement.drawio.png` | Export PNG du diagramme UML (livrable visuel) | à commiter |
 | `docker-compose.staging.yml` | Création (Phase 1) + correction healthcheck `/actuator/health` (Phase 4) + volume mount `nginx.staging.conf` | `3f0c687`, `50fd7bd`, `bf3b51c` |
 | `nginx.staging.conf` | Création (Phase 4) : config nginx HTTP simple pour staging (sans redirection TLS) | `bf3b51c` |

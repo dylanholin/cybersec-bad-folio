@@ -24,7 +24,7 @@ const router = createRouter({
     { path: '/project/:id', component: () => import('@/views/ProjectView.vue') },
 
     // A01-06 : la protection réelle est côté serveur (hasRole ADMIN sur /api/admin/**)
-    // Le guard ci-dessous est un simple garde-fou UX — il décode le JWT au lieu
+    // Le guard ci-dessous est un simple garde-fou UX : il décode le JWT au lieu
     // de faire confiance au sessionStorage, ce qui évite les faux positifs si
     // le store est altéré manuellement.
     {

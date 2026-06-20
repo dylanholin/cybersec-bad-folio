@@ -1,4 +1,4 @@
-# Phase 2 — Pipeline CI (GitHub Actions)
+# Phase 2 : Pipeline CI (GitHub Actions)
 
 > Workflow d'intégration continue. Le plan initial est dans [`00-depart.md`](./00-depart.md).
 
@@ -18,7 +18,7 @@ Fichier : `.github/workflows/ci.yml`
 
 > **Rappel** : un job est une étape indépendante du pipeline. Chaque job s'exécute sur un runner séparé (machine virtuelle Ubuntu). Les jobs peuvent s'exécuter en parallèle ou attendre que d'autres soient terminés (`needs`).
 
-### 1. `test-backend` — Tests backend
+### 1. `test-backend` : Tests backend
 
 > **Ce que fait ce job** : il télécharge le code source, installe Java 21 et Maven, compile le backend, puis exécute tous les tests unitaires. Si un test échoue, le pipeline s'arrête.
 
@@ -27,7 +27,7 @@ Fichier : `.github/workflows/ci.yml`
 - **Commande** : `mvn clean test -B`
 - **Frameworks** : JUnit 5 + Mockito (inclus via `spring-boot-starter-test`)
 
-### 2. `test-frontend` — Tests + build frontend
+### 2. `test-frontend` : Tests + build frontend
 
 > **Ce que fait ce job** : il installe Node 22, télécharge les dépendances npm, exécute les tests Vitest, puis construit le frontend avec Vite. Si un test échoue ou le build échoue, le pipeline s'arrête.
 
@@ -36,17 +36,17 @@ Fichier : `.github/workflows/ci.yml`
 - **Commandes** : `npm ci` → `npm test` → `npm run build`
 - **Frameworks** : Vitest 1.x + @vue/test-utils 2.x
 
-### 3. `scan-sast` — Scan statique (Semgrep)
+### 3. `scan-sast` : Scan statique (Semgrep)
 
 > **Ce que fait ce job** : il analyse le code source à la recherche de vulnérabilités (injections SQL, XSS, mauvaises pratiques) **sans l'exécuter**. Le rapport est uploadé sur GitHub (onglet Security). Ce scan est **non-bloquant** : il génère un rapport mais n'arrête pas le pipeline.
 
 - **Outil** : Semgrep (installé via `python3 -m pip install semgrep`, config `auto`)
 - **Arguments** : `semgrep scan --config auto --sarif --output semgrep.sarif .`
-- **Non-bloquant** : `continue-on-error: true` — le rapport est généré pour analyse, le pipeline ne s'arrête pas
+- **Non-bloquant** : `continue-on-error: true`, le rapport est généré pour analyse, le pipeline ne s'arrête pas
 - **Permissions** : `contents: read`, `security-events: write` pour l'upload SARIF
 - **Sortie** : rapport SARIF uploadé via `github/codeql-action/upload-sarif@v4` (onglet Security de GitHub).
 
-### 4. `build-and-push` — Build, scan Trivy, push GHCR
+### 4. `build-and-push` : Build, scan Trivy, push GHCR
 
 > **Ce que fait ce job** : une fois les tests et le scan SAST terminés, il construit les images Docker du backend et du frontend, les scanne avec Trivy (vulnérabilités HIGH/CRITICAL = bloquant), puis les pousse sur GHCR (registre d'images GitHub). C'est l'étape qui produit les artefacts déployables.
 >
@@ -55,11 +55,11 @@ Fichier : `.github/workflows/ci.yml`
 - **Dépend de** : `test-backend`, `test-frontend`, `scan-sast`
 - **Permissions** : `packages: write` (push GHCR), `contents: read` (checkout), `actions: write` (cache GHA)
 - **Étapes** :
-  1. `docker/setup-buildx-action@v3` — initialise Buildx (requis pour le cache GHA)
+  1. `docker/setup-buildx-action@v3` : initialise Buildx (requis pour le cache GHA)
   2. Login GHCR via `GITHUB_TOKEN` (auto, pas de secret manuel)
   3. Build image backend (avec cache GHA `type=gha,mode=max`)
   4. Build image frontend (avec cache GHA)
-  5. Scan Trivy backend (`aquasecurity/trivy-action@v0.36.0`, severity HIGH/CRITICAL, `ignore-unfixed: true`, `scanners: vuln` — **bloquant**, `exit-code: 1`)
+  5. Scan Trivy backend (`aquasecurity/trivy-action@v0.36.0`, severity HIGH/CRITICAL, `ignore-unfixed: true`, `scanners: vuln`, **bloquant**, `exit-code: 1`)
   6. Scan Trivy frontend (idem)
   7. Push backend vers GHCR (avec cache GHA)
   8. Push frontend vers GHCR (avec cache GHA)
