@@ -1,5 +1,5 @@
 #!/bin/bash
-# hardening.sh — durcissement d'un serveur Linux avant déploiement DevFolio
+# hardening.sh : durcissement d'un serveur Linux avant déploiement DevFolio
 # Correspond aux étapes 0 à 2 de docs/CONTEXT.md
 # Usage : sudo ./hardening.sh
 # ATTENTION : ce script modifie SSH, le pare-feu et les permissions.
@@ -9,6 +9,9 @@ set -euo pipefail
 
 # ── Configuration (adapter avant exécution) ──────────────────────────
 DEPLOY_USER="${DEPLOY_USER:-deploy}"
+# Utilisateur admin existant (ex: debian, ubuntu) à conserver dans AllowUsers
+# pour éviter le lockout SSH. Détecté automatiquement si le script est lancé via sudo.
+ADMIN_USER="${ADMIN_USER:-${SUDO_USER:-}}"
 SSH_PORT="${SSH_PORT:-22}"
 APP_DIR="${APP_DIR:-/opt/devfolio}"
 LOG_DIR="${LOG_DIR:-/var/log/devfolio}"
@@ -30,7 +33,14 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 info "=== Durcissement du serveur DevFolio ==="
-info "Utilisateur : $DEPLOY_USER | App dir : $APP_DIR | SSH port : $SSH_PORT"
+info "Utilisateur déploiement : $DEPLOY_USER | App dir : $APP_DIR | SSH port : $SSH_PORT"
+if [ -n "$ADMIN_USER" ]; then
+    info "Utilisateur admin conservé : $ADMIN_USER"
+else
+    warn "ADMIN_USER non détecté (script lancé en root direct ?)."
+    warn "AllowUsers ne contiendra que '$DEPLOY_USER'. RISQUE DE LOCKOUT SSH."
+    warn "Définir ADMIN_USER manuellement : sudo ADMIN_USER=debian ./hardening.sh"
+fi
 echo ""
 
 # ── Étape 0 : Baseline ───────────────────────────────────────────────
@@ -120,7 +130,7 @@ else
     info "Ajout au groupe docker..."
     usermod -aG docker "$DEPLOY_USER"
 fi
-warn "Pensez à définir un mot de passe ou à déposer une clé SSH pour '$DEPLOY_USER'."
+warn "Pensez à déposer une clé SSH pour '$DEPLOY_USER' dans /home/$DEPLOY_USER/.ssh/authorized_keys"
 
 # ── Étape 1 : Répertoires ─────────────────────────────────────────────
 info "Création des répertoires $APP_DIR et $LOG_DIR..."
@@ -132,6 +142,12 @@ chmod 750 "$APP_DIR" "$LOG_DIR"
 info "Durcissement SSH..."
 SSHD_CONFIG="/etc/ssh/sshd_config"
 SSHD_DROPIN="/etc/ssh/sshd_config.d/99-devfolio-hardening.conf"
+
+# Construire la liste AllowUsers : deploy + admin (si défini)
+ALLOW_USERS="$DEPLOY_USER"
+if [ -n "$ADMIN_USER" ] && [ "$ADMIN_USER" != "$DEPLOY_USER" ]; then
+    ALLOW_USERS="$DEPLOY_USER $ADMIN_USER"
+fi
 
 # Déterminer le gestionnaire de service SSH (ssh sur Debian/Ubuntu, sshd sur RHEL/Fedora)
 if systemctl list-unit-files 2>/dev/null | grep -q '^ssh\.service'; then
@@ -147,11 +163,11 @@ fi
 if [ -d /etc/ssh/sshd_config.d ]; then
     info "Écriture de la configuration dans $SSHD_DROPIN"
     cat > "$SSHD_DROPIN" <<EOF
-# DevFolio — durcissement SSH
+# DevFolio : durcissement SSH
 PasswordAuthentication no
 PermitRootLogin no
 PubkeyAuthentication yes
-AllowUsers $DEPLOY_USER
+AllowUsers $ALLOW_USERS
 MaxAuthTries 3
 LoginGraceTime 30
 EOF
@@ -162,7 +178,7 @@ else
     sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication no/" "$SSHD_CONFIG"
     sed -i "s/^#\?PermitRootLogin.*/PermitRootLogin no/" "$SSHD_CONFIG"
     sed -i "s/^#\?PubkeyAuthentication.*/PubkeyAuthentication yes/" "$SSHD_CONFIG"
-    grep -q "^AllowUsers" "$SSHD_CONFIG" || echo "AllowUsers $DEPLOY_USER" >> "$SSHD_CONFIG"
+    grep -q "^AllowUsers" "$SSHD_CONFIG" || echo "AllowUsers $ALLOW_USERS" >> "$SSHD_CONFIG"
     grep -q "^MaxAuthTries" "$SSHD_CONFIG" || echo "MaxAuthTries 3" >> "$SSHD_CONFIG"
     grep -q "^LoginGraceTime" "$SSHD_CONFIG" || echo "LoginGraceTime 30" >> "$SSHD_CONFIG"
 fi
@@ -207,6 +223,79 @@ else
     warn "UFW non disponible. Configuration manuelle du pare-feu requise (iptables/nftables)."
 fi
 
+# ── Étape 2 : fail2ban (anti brute-force SSH) ─────────────────────────
+info "Installation et configuration de fail2ban..."
+if command -v apt &>/dev/null; then
+    apt install -y fail2ban
+elif command -v dnf &>/dev/null; then
+    dnf install -y fail2ban
+else
+    warn "Gestionnaire de paquets non reconnu. fail2ban non installé."
+fi
+
+if command -v fail2ban-client &>/dev/null; then
+    # Configuration jail SSH (drop-in pour ne pas modifier jail.local directement)
+    JAIL_DROPIN="/etc/fail2ban/jail.d/99-devfolio-sshd.conf"
+    cat > "$JAIL_DROPIN" <<EOF
+# DevFolio : jail SSH
+[sshd]
+enabled = true
+port = $SSH_PORT
+filter = sshd
+logpath = %(sshd_log)s
+backend = systemd
+maxretry = 3
+bantime = 3600
+findtime = 600
+EOF
+    systemctl enable fail2ban
+    systemctl restart fail2ban
+    fail2ban-client status sshd 2>/dev/null || warn "Jail sshd non actif immédiatement. Vérifier : fail2ban-client status"
+else
+    warn "fail2ban non installé. Bannissement brute force SSH non actif."
+fi
+
+# ── Étape 2 : Filet de sécurité DOCKER-USER (iptables) ────────────────
+# Docker contourne UFW via iptables. Ces règles empêchent l'exposition
+# accidentelle des ports 3306 et 8080 même si docker-compose.yml est modifié.
+# NB : ces règles ne persistent pas après un redémarrage de Docker.
+# Un service systemd les réapplique automatiquement (voir ci-dessous).
+info "Configuration du filet DOCKER-USER (iptables)..."
+if command -v iptables &>/dev/null; then
+    # Autoriser les connexions déjà établies (requis par Docker)
+    iptables -C DOCKER-USER -m conntrack --ctstate ESTABLISHED,RELATED -j RETURN 2>/dev/null || \
+        iptables -I DOCKER-USER 1 -j RETURN -m conntrack --ctstate ESTABLISHED,RELATED
+    # Bloquer les ports internes
+    iptables -C DOCKER-USER -p tcp --dport 3306 -j DROP 2>/dev/null || \
+        iptables -I DOCKER-USER -p tcp --dport 3306 -j DROP
+    iptables -C DOCKER-USER -p tcp --dport 8080 -j DROP 2>/dev/null || \
+        iptables -I DOCKER-USER -p tcp --dport 8080 -j DROP
+    info "Règles DOCKER-USER appliquées (3306 et 8080 bloqués)"
+
+    # Service systemd pour réappliquer les règles après un redémarrage de Docker
+    # (les règles DOCKER-USER sont perdues quand Docker recrée la chaîne)
+    DOCKER_USER_SERVICE="/etc/systemd/system/docker-user-rules.service"
+    cat > "$DOCKER_USER_SERVICE" <<EOF
+[Unit]
+Description=DevFolio : règles iptables DOCKER-USER
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'iptables -C DOCKER-USER -m conntrack --ctstate ESTABLISHED,RELATED -j RETURN 2>/dev/null || iptables -I DOCKER-USER 1 -j RETURN -m conntrack --ctstate ESTABLISHED,RELATED; iptables -C DOCKER-USER -p tcp --dport 3306 -j DROP 2>/dev/null || iptables -I DOCKER-USER -p tcp --dport 3306 -j DROP; iptables -C DOCKER-USER -p tcp --dport 8080 -j DROP 2>/dev/null || iptables -I DOCKER-USER -p tcp --dport 8080 -j DROP'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl daemon-reload
+    systemctl enable docker-user-rules.service
+    info "Service systemd docker-user-rules activé (persistant après redémarrage Docker)"
+else
+    warn "iptables non disponible. Filet DOCKER-USER non configuré."
+fi
+
 # ── Étape 2 : Audit utilisateurs et permissions ───────────────────────
 info "Audit des utilisateurs et permissions..."
 
@@ -225,15 +314,18 @@ fi
 
 # SUID/SGID suspects
 info "Recherche de binaires SUID/SGID (vérifier les résultats)..."
-find / -perm -4000 -o -perm -2000 2>/dev/null | head -30
+find / -perm -4000 -o -perm -2000 2>/dev/null | head -30 || true
 
 # ── Résumé ─────────────────────────────────────────────────────────────
 echo ""
 info "=== Durcissement terminé ==="
 info "Baseline initiale : $BASELINE"
 info "Utilisateur déploiement : $DEPLOY_USER (groupe docker)"
+info "Utilisateur admin conservé : ${ADMIN_USER:-<non défini>}"
 info "Répertoire application : $APP_DIR"
 info "Pare-feu : UFW actif (deny entrant par défaut, SSH + $UFW_APP_PORTS ouverts)"
+info "Anti brute-force : fail2ban actif (jail sshd, maxretry=3, bantime=3600)"
+info "Filet Docker : DOCKER-USER bloque 3306 et 8080 (persistant via systemd)"
 info ""
 warn "ACTIONS MANUELLES RESTANTES :"
 warn "  1. Déposer la clé SSH de '$DEPLOY_USER' dans /home/$DEPLOY_USER/.ssh/authorized_keys"
