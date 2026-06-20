@@ -26,7 +26,7 @@ cd /opt/devfolio
 
 ### 3.2 Préparer les fichiers de configuration et les secrets
 
-Le `.env` n'est **pas** dans le dépôt (`.gitignore`). Le script `deploy.sh` le crée automatiquement à partir du template et génère les secrets (`JWT_SECRET`, `DB_PASSWORD`, `ADMIN_PASSWORD`) avec `openssl rand`.
+Le `.env` n'est **pas** dans le dépôt (`.gitignore`). Le script `deploy.sh` le crée automatiquement à partir du template et génère les secrets (`JWT_SECRET`, `DB_ROOT_PASSWORD`, `DB_PASSWORD`, `ADMIN_PASSWORD`) avec `openssl rand`.
 
 Si vous préparez le `.env` manuellement :
 
@@ -36,7 +36,7 @@ chmod 600 .env          # lecture par le seul propriétaire
 
 # Générer les secrets (JWT ≥ 48 car., mots de passe ≥ 24 car.)
 openssl rand -base64 48   # → JWT_SECRET
-openssl rand -base64 24   # → DB_PASSWORD, ADMIN_PASSWORD
+openssl rand -base64 24   # → DB_ROOT_PASSWORD, DB_PASSWORD, ADMIN_PASSWORD
 ```
 
 > **Cohérence Docker :** en déploiement conteneurisé, `DB_HOST` vaut le **nom du service** Docker (`mariadb`), pas `localhost`. La résolution se fait via le réseau Docker interne `backend-db`.
@@ -252,7 +252,7 @@ Si possible, faire vérifier l'exposition par une autre équipe depuis une machi
 | Pas de supervision ni sauvegarde | INFO | Aucune alerte ni restauration | Voir bonus (supervision, backups, fail2ban) |
 | Mot de passe `devfolio_app` en dur dans `init.sql` | ~~BASSE~~ | ~~`'DevfolioApp2024!'` hardcodé dans le SQL commité~~ | **Corrigé** : `init.sql` remplacé par `init-template.sql` + `init.sh` avec injection `${DB_PASSWORD}`. Fichier genere supprime immediatement apres execution. |
 | Fallback `${DB_PASSWORD:}` (chaîne vide) | ~~INFO~~ | ~~`spring.datasource.password=${DB_PASSWORD:}` possède un fallback vide~~ | **Corrigé** : fallback supprimé, `spring.datasource.password=${DB_PASSWORD}` (sans valeur par défaut) |
-| `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | INFO | Le mot de passe root MariaDB est identique au compte applicatif | Séparer `DB_ROOT_PASSWORD` et `DB_PASSWORD` dans `.env` |
+| `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | ~~INFO~~ | ~~Le mot de passe root MariaDB est identique au compte applicatif~~ | **Corrigé** : `DB_ROOT_PASSWORD` séparé de `DB_PASSWORD` dans `.env.example`, `docker-compose.yml`, `docker-compose.staging.yml` et `deploy.sh`. |
 
 > Ces risques sont de criticité **basse** ou **informationnelle** et ne sont pas bloquants pour une démonstration temporaire. Ils sont à traiter avant un déploiement en production. Voir aussi les risques restants documentés en [doc 06 §3](06-corriger-essentiel-demo.md#3-vulnérabilités-restantes) et les nouvelles vulnérabilités de code identifiées post-itération 3.
 
