@@ -58,14 +58,25 @@ via `ssh.socket` et `list-units --type=service` (commit à venir).
    retournait exit 1 (pas de token) et `set -euo pipefail` propageait l'erreur.
    Correction : ajout `|| true` sur les pipelines `grep` (commit à venir).
 
-2. **nginx hôte en conflit avec frontend Docker** : le port 80/443 était déjà pris par
-   le nginx installé sur l'hôte. Solution : `sudo systemctl stop nginx && sudo systemctl
-   disable nginx` (le frontend Docker gère le TLS via son propre nginx).
+2. **nginx hôte sans config DevFolio** : le paquet `nginx` était installé sur l'hôte
+   mais sans fichier `conf.d/devfolio.conf`. Les ports 80/443 écoutaient donc sur la
+   config par défaut (page Welcome nginx), et `/api/`, `/actuator/` n'étaient pas
+   proxyés vers les conteneurs. Solution : créer `/etc/nginx/conf.d/devfolio.conf`
+   (reverse proxy TLS vers `127.0.0.1:3000` pour `/` et `127.0.0.1:8080` pour
+   `/api/` et `/actuator/`), voir §0.4. Le frontend Docker reste bindé sur
+   `127.0.0.1:3000` en HTTP seul (c'est l'architecture prévue par
+   `docker-compose.staging.yml` : nginx hôte gère le TLS, les conteneurs écoutent
+   uniquement sur `127.0.0.1`).
 
-3. **Actuator /env retournait 200** : nginx ne proxyait pas `/actuator/` vers le backend,
-   donc la requête tombait sur `try_files $uri $uri/ /index.html` qui sert la SPA Vue.
-   Correction : ajout d'un bloc `location /actuator/ { return 403; }` dans `nginx.conf`
-   (defense in depth, le backend exige déjà `hasRole("ADMIN")`).
+3. **Actuator /env retournait 200** : sans config nginx hôte, la requête `/actuator/env`
+   tombait sur la page par défaut de nginx (ou la SPA Vue via le frontend), retournant
+   un code 200 trompeur. Avec la config nginx hôte correcte (§0.4), `/actuator/` est
+   proxyé vers le backend où `SecurityConfig` exige `hasRole("ADMIN")` → 401/403.
+   Le bloc `location /actuator/ { return 403; }` ajouté dans `frontend/nginx.conf`
+   (commit `c69e3bf`) est un durcissement pour le **développement local**
+   (`docker-compose.yml` monte `frontend/nginx.conf`). En staging, c'est
+   `nginx.staging.conf` qui est monté dans le conteneur, et la protection réelle
+   vient du proxy nginx hôte + `SecurityConfig`.
 
 ### 0.3 Vérifications manuelles post-déploiement
 
@@ -92,6 +103,114 @@ curl -sk -o /dev/null -w "%{http_code}" https://localhost/api/admin/users
 curl -sk -o /dev/null -w "%{http_code}" https://localhost/actuator/env
 # → 403
 ```
+
+### 0.4 Configuration nginx hôte (reverse proxy TLS)
+
+> La config nginx hôte n'est **pas** versionnée dans le repo : elle contient des chemins
+> et certificats spécifiques au VPS. Elle est créée manuellement sur le VPS après le
+> premier déploiement. Voici la config de référence utilisée.
+
+```bash
+# 1. Certificat auto-signé (sans nom de domaine ; sinon utiliser Let's Encrypt)
+sudo mkdir -p /etc/nginx/ssl
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -subj "/CN=localhost" \
+  -keyout /etc/nginx/ssl/devfolio.key \
+  -out /etc/nginx/ssl/devfolio.crt
+sudo chmod 600 /etc/nginx/ssl/devfolio.key
+
+# 2. Config reverse proxy
+sudo tee /etc/nginx/conf.d/devfolio.conf <<'EOF'
+server {
+    listen 80;
+    server_name _;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name _;
+
+    ssl_certificate     /etc/nginx/ssl/devfolio.crt;
+    ssl_certificate_key /etc/nginx/ssl/devfolio.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # API backend
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Actuator : proxy vers le backend (SecurityConfig bloque /env, /heapdump avec hasRole ADMIN)
+    location /actuator/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Frontend (SPA Vue servie par le conteneur nginx sur 127.0.0.1:3000)
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+
+# 3. Valider et redémarrer
+sudo nginx -t && sudo systemctl restart nginx
+```
+
+> **Pourquoi cette config n'est pas dans `hardening.sh` ?** `hardening.sh` s'exécute
+> avant `deploy.sh`, donc avant que les conteneurs existent. Créer la config nginx hôte
+> à ce stade n'aurait aucune cible à proxyer. Elle se crée après le premier déploiement
+> réussi. Un futur script `post-deploy.sh` pourrait l'automatiser.
+
+### 0.5 Diagnostic CORS (login 403 dans le navigateur)
+
+> Symptôme : le login retourne **403** dans le navigateur, mais **200** en `curl` depuis
+> le VPS. La réponse 403 n'a pas de header `Content-Type` et le body fait ~20 octets
+> (`Invalid CORS request`). C'est Spring Security qui rejette la requête car l'origine
+> du navigateur (`https://<VPS_IP>`) n'est pas dans la liste `CORS_ALLOWED_ORIGINS`.
+
+**Cause la plus fréquente** : `CORS_ALLOWED_ORIGINS` n'a pas été mise à jour dans le
+conteneur backend après modification du `.env`. `docker compose restart` ne relit pas
+le `.env` ; il faut `docker compose up -d --force-recreate`.
+
+**Diagnostic** :
+
+```bash
+# 1. Vérifier la valeur dans le conteneur backend
+docker exec devfolio-backend-1 printenv CORS_ALLOWED_ORIGINS
+# Si la valeur est http://localhost:5173,http://localhost : le .env n'est pas appliqué
+
+# 2. Vérifier la valeur dans le .env sur l'hôte
+grep CORS_ALLOWED_ORIGINS /opt/devfolio/.env
+# Doit être : CORS_ALLOWED_ORIGINS=https://<VPS_IP>
+
+# 3. Corriger le .env si nécessaire
+sed -i 's|^CORS_ALLOWED_ORIGINS=.*|CORS_ALLOWED_ORIGINS=https://<VPS_IP>|' /opt/devfolio/.env
+
+# 4. Recréer le conteneur backend (pas restart, qui ne relit pas le .env)
+cd /opt/devfolio
+docker compose up -d --force-recreate backend
+
+# 5. Vérifier que la nouvelle valeur est prise en compte
+docker exec devfolio-backend-1 printenv CORS_ALLOWED_ORIGINS
+```
+
+**Côté navigateur** : vider le sessionStorage (F12 → Application → Session Storage →
+supprimer `devfolio_token` et `devfolio_user`), recharger la page, se reconnecter.
 
 ---
 
