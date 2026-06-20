@@ -259,10 +259,13 @@ docker compose up --build -d
 | `git: command not found` | `sudo apt update && sudo apt install -y git` |
 | `sudo: command not found` | Depuis root : `apt install -y sudo` puis ajouter votre user au groupe sudo |
 | SSH lockout après hardening | Se connecter en console VPS (hors SSH), éditer `/etc/ssh/sshd_config.d/99-devfolio-hardening.conf`, ajouter votre user dans `AllowUsers` |
+| `hardening.sh` : "Service SSH non trouvé" | Debian 13 utilise `ssh.socket`. Le script le détecte depuis le commit `51c96b5`. Si vous avez une ancienne version, faire `git pull` puis relancer |
 | MariaDB ne démarre pas | Vérifier `.env` : `DB_ROOT_PASSWORD` doit correspondre au mot de passe root du volume existant. Si volume vierge (premier démarrage), n'importe quelle valeur fonctionne |
+| `.env` écrasé par `deploy.sh` | Si un `.env` existait avant, `deploy.sh` le détecte et ne l'écrase pas. Si écrasé accidentellement, récupérer les anciens secrets via `docker exec devfolio-mariadb-1 printenv MYSQL_ROOT_PASSWORD` |
 | Backend ne démarre pas | `docker compose logs backend`, vérifier que `DB_PASSWORD` dans `.env` correspond à ce que `init-template.sql` a utilisé pour créer l'utilisateur `devfolio_app` |
 | `IMAGE_TAG` vide dans `.env` | Ajouter `IMAGE_TAG=manual` dans `/opt/devfolio/.env` (le CI/CD le mettra à jour automatiquement) |
-| Port déjà utilisé | `ss -tulpn \| grep -E ':80\|:443\|:3306\|:8080'` pour identifier le processus, puis l'arrêter |
+| Port 80/443 déjà utilisé | Si nginx est installé sur l'hôte : `sudo systemctl stop nginx && sudo systemctl disable nginx` (le frontend Docker gère le TLS) |
+| `deploy.sh` s'arrête au test de login | Bug `pipefail` corrigé depuis le commit `51c96b5`. Si vous avez une ancienne version, faire `git pull` |
 
 ---
 

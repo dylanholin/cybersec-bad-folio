@@ -5,6 +5,96 @@
 
 ---
 
+## 0. Tests des scripts hardening.sh et deploy.sh (20 juin 2026)
+
+> Les scripts `hardening.sh` et `deploy.sh` ont été testés en conditions réelles sur le VPS
+> Scaleway (Debian 13 trixie) le 20 juin 2026. Voici les résultats et les corrections apportées.
+
+### 0.1 hardening.sh
+
+| Commit testé | Date | Résultat |
+|---|---|---|
+| `51c96b5` (ci-cd-pipeline) | 20/06/2026 18:25 UTC+2 | ✅ Terminé sans crash |
+
+| Fonctionnalité | Résultat | Notes |
+|---|---|---|
+| Détection `ADMIN_USER` via `SUDO_USER` | ✅ | `ADMIN_USER=debian` détecté, `AllowUsers deploy debian` |
+| Drop-in SSH (`99-devfolio-hardening.conf`) | ✅ | Écrit avec `PasswordAuthentication no`, `PermitRootLogin no` |
+| `sshd -t` (validation syntaxe) | ✅ | "Syntaxe OK" |
+| UFW (22/80/443) | ✅ | Actif, deny entrant par défaut |
+| fail2ban (jail sshd) | ✅ | `maxretry=3`, `bantime=3600`, 3 tentatives détectées |
+| DOCKER-USER iptables + systemd | ✅ | Service `docker-user-rules.service` activé |
+| Baseline capturée | ✅ | `/root/baseline-2026-06-20.txt` |
+
+**Bug trouvé et corrigé** : sur Debian 13, `ssh.service` apparaît comme `static` dans
+`systemctl list-unit-files` et le grep ne le matchait pas. Le script affichait
+"Service SSH non trouvé" et ne redémarrait pas SSH. Correction : ajout d'une recherche
+via `ssh.socket` et `list-units --type=service` (commit à venir).
+
+### 0.2 deploy.sh
+
+| Commit testé | Date | Résultat |
+|---|---|---|
+| `51c96b5` (ci-cd-pipeline) | 20/06/2026 18:35 UTC+2 | ✅ Déploiement réussi |
+
+| Fonctionnalité | Résultat | Notes |
+|---|---|---|
+| Refus root | ✅ | "Ne pas exécuter ce script en root" |
+| Vérification Docker + Compose | ✅ | Présents |
+| Génération `.env` avec secrets | ✅ | `openssl rand -base64` |
+| `chmod 600 .env` | ✅ | `-rw------- 1 deploy deploy` |
+| Build + démarrage conteneurs | ✅ | 3 conteneurs Up |
+| Healthcheck MariaDB (60s max) | ✅ | Healthy après 13s |
+| HTTPS actif (200) | ✅ | |
+| Redirection HTTP → HTTPS (301) | ✅ | |
+| Login admin | ✅ | Token JWT obtenu |
+| Injection SQL | ✅ | Bloquée (résultat vide) |
+| Admin sans token | ✅ | 401 |
+| Actuator /env | ✅ après fix | 403 (bloqué par nginx, voir ci-dessous) |
+
+**Bugs trouvés et corrigés** :
+
+1. **`pipefail` + `grep` sans match** : le script crashait au test de login car `grep -o`
+   retournait exit 1 (pas de token) et `set -euo pipefail` propageait l'erreur.
+   Correction : ajout `|| true` sur les pipelines `grep` (commit à venir).
+
+2. **nginx hôte en conflit avec frontend Docker** : le port 80/443 était déjà pris par
+   le nginx installé sur l'hôte. Solution : `sudo systemctl stop nginx && sudo systemctl
+   disable nginx` (le frontend Docker gère le TLS via son propre nginx).
+
+3. **Actuator /env retournait 200** : nginx ne proxyait pas `/actuator/` vers le backend,
+   donc la requête tombait sur `try_files $uri $uri/ /index.html` qui sert la SPA Vue.
+   Correction : ajout d'un bloc `location /actuator/ { return 403; }` dans `nginx.conf`
+   (defense in depth, le backend exige déjà `hasRole("ADMIN")`).
+
+### 0.3 Vérifications manuelles post-déploiement
+
+```bash
+# Healthcheck backend
+curl -s http://127.0.0.1:8080/actuator/health
+# → {"status":"UP"}
+
+# Login admin
+curl -sk -X POST https://localhost/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@devfolio.com","password":"DevfolioAdmin2024!"}'
+# → {"user":{...},"token":"eyJ..."}
+
+# Injection SQL (doit retourner vide)
+curl -sk "https://localhost/api/search/projects?q=' OR '1'='1"
+# → (vide)
+
+# Admin sans token (doit retourner 401)
+curl -sk -o /dev/null -w "%{http_code}" https://localhost/api/admin/users
+# → 401
+
+# Actuator /env (doit retourner 403 après fix nginx)
+curl -sk -o /dev/null -w "%{http_code}" https://localhost/actuator/env
+# → 403
+```
+
+---
+
 ## 1. Pipeline CI/CD déployé
 
 ### 1.1 Jobs du workflow `.github/workflows/ci.yml`

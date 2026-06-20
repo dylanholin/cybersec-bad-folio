@@ -216,11 +216,11 @@ fi
 
 # Login
 info "Test de login..."
-ADMIN_PASSWORD_VAL=$(grep '^ADMIN_PASSWORD=' .env | cut -d'=' -f2-)
+ADMIN_PASSWORD_VAL=$(grep '^ADMIN_PASSWORD=' .env | cut -d'=' -f2- || true)
 LOGIN_RESP=$(curl -sk -X POST "$BASE_URL/api/auth/login" \
     -H "Content-Type: application/json" \
     -d "{\"email\":\"admin@devfolio.com\",\"password\":\"${ADMIN_PASSWORD_VAL}\"}" 2>/dev/null || echo "")
-TOKEN=$(echo "$LOGIN_RESP" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+TOKEN=$(echo "$LOGIN_RESP" | grep -o '"token":"[^"]*"' | cut -d'"' -f4 || true)
 if [ -n "$TOKEN" ]; then
     info "Login réussi, token obtenu"
 else

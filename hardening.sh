@@ -150,7 +150,11 @@ if [ -n "$ADMIN_USER" ] && [ "$ADMIN_USER" != "$DEPLOY_USER" ]; then
 fi
 
 # Déterminer le gestionnaire de service SSH (ssh sur Debian/Ubuntu, sshd sur RHEL/Fedora)
-if systemctl list-unit-files 2>/dev/null | grep -q '^ssh\.service'; then
+# Debian 12+ utilise l'activation par socket (ssh.socket) ; on cherche aussi ssh.service
+# via list-units car list-unit-files peut le marquer "static" et le grep peut échouer.
+if systemctl list-unit-files 2>/dev/null | grep -qE '^ssh\.(service|socket)'; then
+    SSH_SERVICE="ssh"
+elif systemctl list-units --type=service 2>/dev/null | grep -q '^ssh\.service'; then
     SSH_SERVICE="ssh"
 elif systemctl list-unit-files 2>/dev/null | grep -q '^sshd\.service'; then
     SSH_SERVICE="sshd"
