@@ -1,6 +1,11 @@
 ---
 name: owasp-folio-review
 description: Auditer un diff git du projet DevFolio pour empêcher les régressions de sécurité. Cette skill est COMPLÉMENTAIRE à AGENTS.md (qui couvre déjà les règles OWASP de base : pas de concaténation SQL, pas de v-html, pas de permitAll(), parseClaimsJws(), pas de secret hardcodé, pas de log4j-core, UrlValidator, Docker isolé). Elle ajoute ce que AGENTS.md ne couvre pas : les régressions silencieuses, les corrections spécifiques de docs/securite/06-corriger-essentiel-demo.md, et une procédure d'audit structurée. Utiliser avant tout commit sur correction, ou quand l'utilisateur demande "revue sécurité", "audit OWASP", "est-ce que c'est safe", ou modifie SecurityConfig, JwtAuthenticationFilter, JwtService, AuthController, AuthService, application.properties, ProjectController, UserController, User.java, stores/auth.js, services/api.js, ProfileView.vue, nginx.staging.conf, ou init.sql.
+allowed-tools:
+  - read
+  - grep
+  - glob
+  - exec
 ---
 
 # OWASP Folio Review

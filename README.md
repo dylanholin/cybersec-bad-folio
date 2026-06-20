@@ -60,6 +60,11 @@ graph TB
     BE -->|JDBC| DB
 ```
 
+> **Note sur `127.0.0.1`** : les conteneurs Docker (frontend, backend, MariaDB) sont
+> bindés sur `127.0.0.1` (localhost du VPS), pas sur une IP publique. Seuls les ports
+> 80 et 443 du Nginx hôte sont exposés vers internet (via UFW). Les ports 3000, 8080
+> et 3306 ne sont jamais accessibles depuis l'extérieur.
+
 ## Stack technique
 
 | Couche | Technologie |
@@ -121,6 +126,7 @@ docker-compose up --build
 | `05-corrections-trivy.md` | Cycle d'itération Trivy (runs #4 à #7, 36 CVE → 0) |
 | `06-deploiement-continu.md` | Phase 4 : Job deploy, SSH, healthcheck, correctifs |
 | `07-fichiers-modifies.md` | Tableau récapitulatif des fichiers créés/modifiés |
+| `08-resultat-vps.md` | Bilan : sécurité du VPS en production (fail2ban, UFW, clés SSH, compte deploy) |
 | `diagramme-deploiement.drawio` | Diagramme UML de déploiement (diagrams.net) |
 | `diagramme-deploiement.drawio.png` | Export PNG du diagramme UML |
 

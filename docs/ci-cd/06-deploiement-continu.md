@@ -20,7 +20,7 @@ Après la build, le scan Trivy et le push des images sur GHCR, le job `deploy` s
 |---|---|
 | **Condition** | `if: github.ref == 'refs/heads/ci-cd-pipeline'` — ne se déclenche que sur push direct sur la branche |
 | **Dépendance** | `needs: [build-and-push]` — attend que les images soient poussées sur GHCR |
-| **Connexion SSH** | `appleboy/ssh-action@v1.2.0` avec clé privée stockée en GitHub Secret |
+| **Connexion SSH** | `appleboy/ssh-action` épinglé par SHA `7eaf766...` (v1.2.0) avec clé privée stockée en GitHub Secret |
 | **Mise à jour IMAGE_TAG** | `sed -i` dans `.env` sur le VPS pour pointer vers le SHA du commit |
 | **Récupération fichiers** | `git fetch` + `git checkout` du `docker-compose.staging.yml` et `nginx.staging.conf` à jour |
 | **Login GHCR** | Authentification Docker avec un PAT (`VPS_GHCR_TOKEN`) pour pull les images privées |
