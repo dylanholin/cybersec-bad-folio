@@ -1,5 +1,5 @@
 #!/bin/bash
-# deploy.sh — déploiement de DevFolio sur le serveur durci
+# deploy.sh : déploiement de DevFolio sur le serveur durci
 # Correspond aux étapes 3 à 5 de docs/CONTEXT.md
 # Usage : ./deploy.sh [BRANCH]
 # Exécuter en tant que l'utilisateur de déploiement (pas root)
@@ -59,21 +59,32 @@ if [ ! -f .env ]; then
     JWT_SECRET=$(openssl rand -base64 48 2>/dev/null || head -c 48 /dev/urandom | base64)
     DB_ROOT_PASSWORD=$(openssl rand -base64 24 2>/dev/null || head -c 24 /dev/urandom | base64)
     DB_PASSWORD=$(openssl rand -base64 24 2>/dev/null || head -c 24 /dev/urandom | base64)
-    ADMIN_PASSWORD=$(openssl rand -base64 24 2>/dev/null || head -c 24 /dev/urandom | base64)
 
     # Remplir les valeurs (adaptation simple par sed)
     sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" .env
     sed -i "s|^DB_ROOT_PASSWORD=.*|DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}|" .env
     sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|" .env
-    sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${ADMIN_PASSWORD}|" .env
     sed -i "s|^DB_HOST=.*|DB_HOST=mariadb|" .env
+
+    # ADMIN_EMAIL et ADMIN_PASSWORD : identifiants de démonstration.
+    # Ces valeurs ne sont PAS lues par Spring Boot (le mot de passe admin est un
+    # hash BCrypt hardcodé dans init-template.sql). Elles sont ici pour référence
+    # et utilisées par le test de login en fin de script.
+    sed -i "s|^ADMIN_EMAIL=.*|ADMIN_EMAIL=admin@devfolio.com|" .env
+    sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=DevfolioAdmin2024!|" .env
+
+    # IMAGE_TAG : placeholder pour docker-compose.staging.yml.
+    # Le pipeline CI/CD mettra à jour cette valeur avec le SHA du commit.
+    # "manual" indique que le déploiement initial a été fait via deploy.sh (build local).
+    sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=manual|" .env
 
     warn "Fichier .env créé avec des secrets générés automatiquement."
     warn "VÉRIFIEZ ET COMPLÉTEZ LES VALEURS AVANT DE POURSUIVRE :"
     warn "  $APP_DIR/.env"
     warn ""
-    warn "En particulier : DB_USER, ADMIN_EMAIL, et les mots de passe des comptes seed dans init.sql"
-    warn "doivent être cohérents avec les valeurs du .env."
+    warn "Note : ADMIN_EMAIL et ADMIN_PASSWORD sont les identifiants de démonstration"
+    warn "(correspondent au hash BCrypt dans init-template.sql). Ne pas les modifier"
+    warn "sans mettre à jour init-template.sql en conséquence."
     read -p "Continuer le déploiement ? [y/N] " -r
     [[ $REPLY =~ ^[Yy]$ ]] || error "Déploiement annulé. Modifier .env puis relancer."
 else
@@ -84,6 +95,16 @@ else
         warn "JWT_SECRET trop court ($((JWT_LEN - 1)) car.). Risque d'InvalidKeyException."
         warn "Régénérer avec : openssl rand -base64 48"
     fi
+    # Vérifier que DB_ROOT_PASSWORD est présent (ajouté lors de la séparation root/app)
+    if ! grep -q '^DB_ROOT_PASSWORD=.' .env; then
+        error "DB_ROOT_PASSWORD manquant ou vide dans .env. Ajouter le mot de passe root MariaDB existant :
+  echo 'DB_ROOT_PASSWORD=<mot de passe root actuel de MariaDB>' >> .env
+Si le volume MariaDB existe déjà, c'est le mot de passe root défini au premier déploiement."
+    fi
+    # Vérifier que DB_PASSWORD est présent
+    if ! grep -q '^DB_PASSWORD=.' .env; then
+        warn "DB_PASSWORD manquant ou vide dans .env. L'application ne pourra pas se connecter à MariaDB."
+    fi
     # Vérifier que DB_HOST est correct pour Docker
     DB_HOST_VAL=$(grep '^DB_HOST=' .env | cut -d'=' -f2)
     if [ "$DB_HOST_VAL" = "localhost" ]; then
@@ -93,12 +114,14 @@ else
     fi
 fi
 
-# Vérifier qu'aucun secret n'est en dur dans docker-compose.yml.
+# Vérifier qu'aucun secret n'est en dur dans docker-compose.yml ou docker-compose.staging.yml.
 # On ne flague que les valeurs littérales : les références ${VAR} sont légitimes.
-if grep -iE '^[[:space:]]+(MYSQL_ROOT_PASSWORD|JWT_SECRET|DB_PASSWORD|ADMIN_PASSWORD)[[:space:]]*:' docker-compose.yml 2>/dev/null \
-        | grep -qvE '\$\{'; then
-    error "Un secret littéral est présent dans docker-compose.yml. Utiliser env_file: .env et des références \${...}."
-fi
+for COMPOSE_FILE in docker-compose.yml docker-compose.staging.yml; do
+    if [ -f "$COMPOSE_FILE" ] && grep -iE '^[[:space:]]+(MYSQL_ROOT_PASSWORD|JWT_SECRET|DB_PASSWORD|ADMIN_PASSWORD)[[:space:]]*:' "$COMPOSE_FILE" 2>/dev/null \
+            | grep -qvE '\$\{'; then
+        error "Un secret littéral est présent dans $COMPOSE_FILE. Utiliser env_file: .env et des références \${...}."
+    fi
+done
 
 # ── Étape 4 : Déployer ────────────────────────────────────────────────
 info "Construction et démarrage des conteneurs..."
@@ -114,12 +137,17 @@ fi
 $COMPOSE_CMD up --build -d
 
 info "Attente du healthcheck MariaDB..."
+MARIADB_HEALTHY=false
 for i in $(seq 1 30); do
     if $COMPOSE_CMD ps mariadb 2>/dev/null | grep -q "healthy"; then
+        MARIADB_HEALTHY=true
         break
     fi
     sleep 2
 done
+if [ "$MARIADB_HEALTHY" = false ]; then
+    error "MariaDB n'est pas sain après 60s. Diagnostique : $COMPOSE_CMD logs mariadb"
+fi
 
 # ── Étape 4 : Vérifications post-déploiement ──────────────────────────
 info "Vérifications post-déploiement..."
@@ -135,7 +163,7 @@ BACKEND_USER=$(docker exec backend whoami 2>/dev/null || echo "N/A")
 if [ "$BACKEND_USER" = "appuser" ]; then
     info "Backend : utilisateur '$BACKEND_USER' (non root)"
 else
-    warn "Backend : utilisateur '$BACKEND_USER' — attendu 'appuser'"
+    warn "Backend : utilisateur '$BACKEND_USER', attendu 'appuser'"
 fi
 
 # Frontend non root
@@ -143,7 +171,7 @@ FRONTEND_USER=$(docker exec frontend whoami 2>/dev/null || echo "N/A")
 if [ "$FRONTEND_USER" = "nginx" ]; then
     info "Frontend : utilisateur '$FRONTEND_USER' (non root)"
 else
-    warn "Frontend : utilisateur '$FRONTEND_USER' — attendu 'nginx'"
+    warn "Frontend : utilisateur '$FRONTEND_USER', attendu 'nginx'"
 fi
 
 # Conteneurs non privilégiés
@@ -151,7 +179,7 @@ PRIV=$(docker inspect --format '{{.HostConfig.Privileged}}' backend 2>/dev/null 
 if [ "$PRIV" = "false" ]; then
     info "Backend : non privilégié"
 else
-    warn "Backend : privilégié=$PRIV — attendu false"
+    warn "Backend : privilégié=$PRIV, attendu false"
 fi
 
 # Réseaux isolés
@@ -196,7 +224,7 @@ TOKEN=$(echo "$LOGIN_RESP" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 if [ -n "$TOKEN" ]; then
     info "Login réussi, token obtenu"
 else
-    warn "Login échoué. Vérifier ADMIN_PASSWORD dans .env et init.sql."
+    warn "Login échoué. Vérifier ADMIN_PASSWORD dans .env et init-template.sql."
 fi
 
 # Tests de sécurité (régressions)
@@ -278,4 +306,4 @@ info ""
 warn "N'oubliez pas :"
 warn "  - Vérifier depuis une autre machine que seuls 80/443 répondent"
 warn "  - Exécuter nmap -Pn -p- <serveur> depuis un poste distant"
-warn "  - Mettre à jour init.sql si ADMIN_PASSWORD a été changé dans .env"
+warn "  - Si ADMIN_PASSWORD est changé dans .env, mettre à jour le hash BCrypt dans init-template.sql"
