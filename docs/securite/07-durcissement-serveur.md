@@ -310,7 +310,7 @@ Ressources : [Docker security](https://docs.docker.com/engine/security/) · [OWA
 | Pas de supervision / sauvegarde | INFO | Aucune alerte ni restauration en cas d'incident | Voir bonus (supervision, backups) |
 | Pas de bannissement automatique | ~~BASSE~~ | ~~Brute force SSH non bloqué dynamiquement~~ | **Corrigé** : `fail2ban` installé (jail sshd, `bantime = 3600`, `maxretry = 3` — cf. `01-infrastructure-vps.md`). |
 | Mot de passe `devfolio_app` en dur dans `init.sql` | ~~BASSE~~ | ~~`'DevfolioApp2024!'` hardcodé dans le SQL commité~~ | **Corrigé** : `init.sql` remplacé par `init-template.sql` + `init.sh` avec injection `${DB_PASSWORD}`. Fichier genere supprime immediatement apres execution. |
-| `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | INFO | Le mot de passe root MariaDB est identique au compte applicatif dans `docker-compose.yml` | Séparer `DB_ROOT_PASSWORD` et `DB_PASSWORD` dans `.env` |
+| `MYSQL_ROOT_PASSWORD` = `DB_PASSWORD` | ~~INFO~~ | ~~Le mot de passe root MariaDB est identique au compte applicatif dans `docker-compose.yml`~~ | **Corrigé** : `DB_ROOT_PASSWORD` séparé de `DB_PASSWORD` dans `.env.example`, `docker-compose.yml`, `docker-compose.staging.yml` et `deploy.sh`. |
 
 ---
 
